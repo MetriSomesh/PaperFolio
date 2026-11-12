@@ -27,7 +27,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.paperfolio.domain.model.ChartPoint
-import com.paperfolio.ui.theme.DhanGreen
+import com.paperfolio.ui.theme.ChartGreen
 import com.paperfolio.ui.theme.LossRedBright
 import com.paperfolio.ui.theme.TextSecondary
 import com.paperfolio.ui.theme.TextTertiary
@@ -53,7 +53,7 @@ fun StockLineChart(
     }
 
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
-    val lineColor = if (isPositive) DhanGreen else LossRedBright
+    val lineColor = if (isPositive) ChartGreen else LossRedBright
     val gradientColor = if (isPositive) Color(0x3300B386) else Color(0x33E5484D)
 
     val minPrice = points.minOf { it.price }

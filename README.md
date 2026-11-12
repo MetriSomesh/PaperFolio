@@ -5,13 +5,13 @@
 [![Android](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.05.00-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![Material 3](https://img.shields.io/badge/Material%203-Dhan%20Theme-00916E?style=for-the-badge)](https://m3.material.io/)
+[![Material 3](https://img.shields.io/badge/Material%203-Velto%20Theme-122D28?style=for-the-badge)](https://m3.material.io/)
 [![Room](https://img.shields.io/badge/Room%20DB-2.6.1-F44336?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.android.com/training/data-storage/room)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 **A modern, self-contained, and completely serverless Android paper trading app for the Indian Stock Market (NSE & BSE Equities + ETFs).**
 
-Inspired by the clean light UI of the **Dhan** app. Built for pure delivery/cash investing with **zero real money risk** and **100% free offline-first architecture**.
+Styled after the **VELTO** fintech concept (New Minds, Awwwards nominee). Built for pure delivery/cash investing with **zero real money risk** and **100% free offline-first architecture**.
 
 </div>
 
@@ -25,7 +25,7 @@ Most paper trading platforms either require paid subscriptions, mandate broker l
 * 🇮🇳 **Pure Indian Market Focus**: Covers **8,100+ active NSE & BSE equities and 360+ ETFs**.
 * 🛡️ **Pure Delivery / Cash Trading**: No options, no futures, no confusing leverage — practice disciplined long-term investing and swing trading.
 * ⚡ **100% Free & Serverless**: No external server or recurring API costs. The app runs completely on-device using a pre-compiled SQLite database and free, on-demand live quotes.
-* 🎨 **Dhan-Inspired Aesthetics**: Light palette (white background, hairline `#E5E8EB` borders), Inter typography, profit/loss as plain coloured text (`#007A5E` / `#D92D20`), custom cubic Bézier price charts, and performance range sliders.
+* 🎨 **VELTO-Inspired Design**: Off-white screens, dark-green hero card, lime pill CTA, pill nav/tabs/chips, Inter typography with 34sp ExtraBold money figures, profit/loss as plain coloured text (`#007A5E` / `#C62828`), custom cubic Bézier price charts, and performance range sliders.
 
 ---
 
@@ -42,9 +42,9 @@ Most paper trading platforms either require paid subscriptions, mandate broker l
 - Dedicated filter chips: **ALL**, **NSE**, **BSE**, and **ETF** with custom exchange badges.
 - **On-Demand Live Pricing**: The app does **not** fetch bulk quotes on startup. Live market prices and interactive charts are only fetched when you inspect a specific stock or view an active portfolio.
 
-### 3. 📊 Interactive Charts & Dhan-Style Performance
+### 3. 📊 Interactive Charts & Performance
 - Custom Canvas chart featuring cubic Bézier smoothing, vertical gradient shading, dashed previous-close reference lines, and touch crosshairs with price tooltips.
-- **Dhan Performance Sliders**: Instant visual indicators showing where the current price sits between **Today's Low / High** and **52-Week Low / High**.
+- **Performance Sliders**: Instant visual indicators showing where the current price sits between **Today's Low / High** and **52-Week Low / High**.
 - Time period selectors (**1D**, **5D**, **1M**, **6M**, **1Y**, **5Y**, **MAX**).
 
 ### 4. 🛒 Buy & Sell Delivery Orders
@@ -178,7 +178,7 @@ paper_trade/
 │   │   │   │   ├── portfolio/           # PortfolioDetailScreen & ViewModel
 │   │   │   │   ├── search/              # StockSearchScreen & ViewModel
 │   │   │   │   ├── settings/            # SettingsScreen & ViewModel
-│   │   │   │   ├── theme/               # Dhan colors, typography, theme
+│   │   │   │   ├── theme/               # VELTO colors, typography, theme
 │   │   │   │   └── utils/               # FormatUtils (Indian currency formatting)
 │   │   │   ├── worker/                  # DailySnapshotWorker (WorkManager)
 │   │   │   ├── MainActivity.kt          # Single-activity Compose NavHost
@@ -230,21 +230,25 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 
 ---
 
-## 🎨 Color Palette (Dhan Inspiration)
+## 🎨 Design language (VELTO inspiration, v1.0.3)
 
-Dhan's app is light: white background, hairline borders, and colour used sparingly — green/red as plain text for P&L, a solid green fill only for the primary BUY action. Text contrasts were computed against their backgrounds (WCAG AA: 4.5:1 for body text).
+The UI follows the **VELTO** fintech concept (New Minds, Awwwards nominee — found via the Awwwards MCP): off-white app screens, white cards with soft borders, one dark-green hero card per screen, a single loud lime accent for the primary CTA, and pill everything — nav, tabs, chips, buttons. Typography is Inter with huge ExtraBold money figures (34sp, tight tracking) and Semibold sentence-case section titles; there are no all-caps headers. Every text colour was computed against its background (WCAG AA: 4.5:1 for body text).
 
 | Color Name | Hex Code | Contrast | Purpose |
 |---|---|---|---|
-| **Background** | `#FFFFFF` | — | App background |
-| **Surface Card** | `#FFFFFF` | — | Cards (1dp `#E5E8EB` border, no shadow) |
-| **Surface Elevated** | `#F4F6F8` | — | Search bars, stepper buttons, chips |
-| **Text Primary** | `#12151A` | 18.5:1 | Headings, values |
-| **Text Secondary** | `#5B6675` | 5.8:1 | Labels, subtext |
-| **Text Tertiary** | `#6B7686` | 4.6:1 | Captions, timestamps |
-| **Brand Green** | `#00916E` | — | BUY fill, links, selected tabs |
-| **Profit Green (text)** | `#007A5E` | 5.3:1 | Gains, P&L text |
-| **Loss Red (text)** | `#D92D20` | 4.8:1 | Losses, SELL, errors |
+| **Background** | `#F4F6F1` | — | App background (off-white) |
+| **Surface Card** | `#FFFFFF` | — | Cards (1dp `#E3E6DF` border, 16dp corners) |
+| **Surface Muted** | `#E9ECE5` | — | Search bars, stepper buttons, unselected pills |
+| **Text Primary** | `#12151A` | 16.8:1 | Headings, values |
+| **Text Secondary** | `#5B6675` | 5.4:1 | Labels, subtext |
+| **Text Tertiary** | `#66707E` | 4.6:1 | Captions, timestamps |
+| **Velto Green** | `#122D28` | 13.5:1 | Hero card, active nav pill, selected pills |
+| **Lime** | `#DCF97B` | 12.5:1 (dark text) | Primary CTA fill — never with white text (1.2:1) |
+| **Hero Text** | `#F4F6F1` | 13.5:1 on hero | Value on the dark hero card |
+| **Hero Secondary** | `#A8B8B0` | 7.1:1 on hero | Labels on the dark hero card |
+| **Hero Profit / Loss** | `#8FE3B0` / `#FF9A8A` | 9.6:1 / 7.2:1 on hero | P&L on the dark hero card |
+| **Profit Green (text)** | `#007A5E` | 4.9:1 | Gains, P&L text on light |
+| **Loss Red (text)** | `#C62828` | 5.2:1 | Losses, SELL, errors (also the SELL fill) |
 | **Chart Green** | `#00B386` | — | Chart line / gradient |
 | **BSE Violet** | `#7C3AED` | — | BSE badge |
 | **ETF Amber** | `#B45309` | — | ETF badge |
@@ -256,7 +260,7 @@ Dhan's app is light: white background, hairline borders, and colour used sparing
 **Root cause:** the database was built with `.createFromAsset("stock_master.db")` + `.fallbackToDestructiveMigration()`. The bundled asset shipped with `PRAGMA user_version = 0` while Room expected version 1, so on every cold (re)open Room's copy-helper saw a version mismatch with no migration path and **deleted the live database file and re-copied the asset** — user tables included. Two more wipe paths existed: the app-level catch that deleted the database on any open error, and the recovery screen's one-tap "Reset & Retry".
 
 **The fix:**
-- No `createFromAsset`, no destructive fallback. The stock catalog is now seeded from the asset with `ATTACH` + `INSERT OR IGNORE` into an ordinary Room database (`CatalogSeedCallback`), which only ever INSERTs into `stock_master` / `stock_master_fts` and can never touch user tables.
+- No `createFromAsset`, no destructive fallback. The stock catalog is now seeded from the asset by opening it read-only and copying rows with plain INSERTs into an ordinary Room database (`CatalogSeedCallback`), which only ever INSERTs into `stock_master` / `stock_master_fts` and can never touch user tables. (ATTACH + cross-DB INSERT was tried first and fails under Room's pooled connections.)
 - If the catalog is ever found empty on open, it re-seeds itself (self-heal) — again without touching user data.
 - Buy/sell and portfolio creation now run inside single Room transactions, so a crash mid-order can't leave a half-written state.
 - The recovery screen's erase is now a deliberate two-tap action ("Tap again to erase ALL portfolios & trades").

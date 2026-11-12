@@ -61,17 +61,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paperfolio.domain.model.Portfolio
-import com.paperfolio.ui.components.DhanCard
-import com.paperfolio.ui.components.DhanFilterChip
-import com.paperfolio.ui.components.DhanSectionHeader
-import com.paperfolio.ui.theme.BackgroundDark
-import com.paperfolio.ui.theme.BorderDark
-import com.paperfolio.ui.theme.BrandPrimary
-import com.paperfolio.ui.theme.BuyGreen
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import com.paperfolio.ui.components.HeroStat
+import com.paperfolio.ui.components.MetricBadge
+import com.paperfolio.ui.components.VeltoCard
+import com.paperfolio.ui.components.VeltoFilterChip
+import com.paperfolio.ui.components.VeltoHeroCard
+import com.paperfolio.ui.components.VeltoHeroDivider
+import com.paperfolio.ui.components.VeltoPrimaryButton
+import com.paperfolio.ui.components.VeltoSectionHeader
+import com.paperfolio.ui.theme.AppBackground
+import com.paperfolio.ui.theme.Border
+import com.paperfolio.ui.theme.VeltoGreen
+import com.paperfolio.ui.theme.HeroText
+import com.paperfolio.ui.theme.HeroTextSecondary
+import com.paperfolio.ui.theme.Lime
 import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.ProfitGreenBg
-import com.paperfolio.ui.theme.SurfaceDark
-import com.paperfolio.ui.theme.SurfaceElevatedDark
+import com.paperfolio.ui.theme.Surface
+import com.paperfolio.ui.theme.SurfaceMuted
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
 import com.paperfolio.ui.theme.TextTertiary
@@ -96,6 +106,19 @@ fun HomeScreen(
         }
     }
 
+    // VELTO's home opens with a date line under the wordmark.
+    val todayLabel = remember {
+        SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date())
+    }
+    // Real totals across portfolios — the hero sums what exists, it
+    // invents nothing: value, P&L and invested cash are all sums of the
+    // portfolios the user already has.
+    val totalValue = portfolios.sumOf { it.totalNetWorth }
+    val totalPnl = portfolios.sumOf { it.totalPnl }
+    val totalInvested = portfolios.sumOf { it.investedAmount }
+    val totalCash = portfolios.sumOf { it.cashBalance }
+    val totalPnlPercent = if (totalInvested > 0) totalPnl / totalInvested * 100 else 0.0
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -108,7 +131,7 @@ fun HomeScreen(
                             color = TextPrimary
                         )
                         Text(
-                            text = "Indian Equity Paper Trading",
+                            text = todayLabel,
                             fontSize = 11.sp,
                             color = TextTertiary
                         )
@@ -119,25 +142,65 @@ fun HomeScreen(
                         Icon(Icons.Default.Search, contentDescription = "Search Stocks", tint = TextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppBackground)
             )
         },
-        containerColor = BackgroundDark
+        containerColor = AppBackground
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Dhan-style search bar: grey pill, magnifier, placeholder.
+            // VELTO hero: the dark balance card. Total value, P&L in the
+            // light green/red, then invested / cash / portfolio count.
+            if (portfolios.isNotEmpty()) {
+                item {
+                    VeltoHeroCard {
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            Text("Total portfolio value", fontSize = 12.sp, color = HeroTextSecondary)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = FormatUtils.formatInr(totalValue),
+                                fontSize = 34.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = HeroText
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            MetricBadge(
+                                value = totalPnl,
+                                percent = totalPnlPercent,
+                                onDark = true
+                            )
+                            Spacer(modifier = Modifier.height(18.dp))
+                            VeltoHeroDivider()
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                HeroStat("Invested", FormatUtils.formatInr(totalInvested))
+                                HeroStat("Cash", FormatUtils.formatInr(totalCash))
+                                HeroStat(
+                                    "Portfolios",
+                                    "${portfolios.size}",
+                                    alignEnd = true
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Search bar: muted pill, magnifier, placeholder.
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(SurfaceElevatedDark)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(SurfaceMuted)
                         .clickable { onNavigateToSearch() }
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -148,20 +211,12 @@ fun HomeScreen(
                 }
             }
 
-            // Primary action: full-width green button (Dhan's CTA style).
+            // Primary action: VELTO's lime pill CTA.
             item {
-                Button(
-                    onClick = { showCreateDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Create Portfolio", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                }
+                VeltoPrimaryButton(
+                    text = "Create portfolio",
+                    onClick = { showCreateDialog = true }
+                )
             }
 
             // Portfolio Section Header
@@ -171,16 +226,16 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    DhanSectionHeader(text = "MY PORTFOLIOS (${portfolios.size})")
+                    VeltoSectionHeader(text = "My portfolios (${portfolios.size})")
                     TextButton(onClick = { showCreateDialog = true }) {
-                        Text("+ Create New", color = BrandPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text("+ Create new", color = VeltoGreen, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
 
             if (portfolios.isEmpty()) {
                 item {
-                    DhanCard {
+                    VeltoCard {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -194,11 +249,11 @@ fun HomeScreen(
                                     .background(ProfitGreenBg),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(28.dp))
+                                Icon(Icons.Default.Add, contentDescription = null, tint = VeltoGreen, modifier = Modifier.size(28.dp))
                             }
                             Spacer(modifier = Modifier.height(14.dp))
                             Text(
-                                text = "No Portfolios Yet",
+                                text = "No portfolios yet",
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = TextPrimary
@@ -211,13 +266,10 @@ fun HomeScreen(
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(18.dp))
-                            Button(
-                                onClick = { showCreateDialog = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Text("Create First Portfolio", fontWeight = FontWeight.SemiBold)
-                            }
+                            VeltoPrimaryButton(
+                                text = "Create first portfolio",
+                                onClick = { showCreateDialog = true }
+                            )
                         }
                     }
                 }
@@ -253,7 +305,7 @@ fun PortfolioItemCard(
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    DhanCard(onClick = onClick) {
+    VeltoCard(onClick = onClick) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -268,7 +320,7 @@ fun PortfolioItemCard(
                     val dotColor = try {
                         Color(android.graphics.Color.parseColor(portfolio.colorTag))
                     } catch (e: Exception) {
-                        BrandPrimary
+                        VeltoGreen
                     }
                     Box(
                         modifier = Modifier
@@ -291,7 +343,7 @@ fun PortfolioItemCard(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(SurfaceElevatedDark)
+                            .background(SurfaceMuted)
                     ) {
                         Icon(
                             Icons.Default.DeleteOutline,
@@ -362,7 +414,7 @@ fun PortfolioItemCard(
                     Text("Cancel", color = TextPrimary)
                 }
             },
-            containerColor = SurfaceDark
+            containerColor = Surface
         )
     }
 }
@@ -374,7 +426,7 @@ fun CreatePortfolioDialog(
 ) {
     var name by remember { mutableStateOf("") }
     var budgetText by remember { mutableStateOf("100000") }
-    var selectedColor by remember { mutableStateOf("#00916E") }
+    var selectedColor by remember { mutableStateOf("#122D28") }
     var budgetError by remember { mutableStateOf<String?>(null) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -388,12 +440,12 @@ fun CreatePortfolioDialog(
     )
 
     val colorOptions = listOf(
-        "#00916E", "#2563EB", "#B45309", "#7C3AED", "#D92D20"
+        "#122D28", "#007A5E", "#2563EB", "#B45309", "#7C3AED"
     )
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create New Portfolio", fontWeight = FontWeight.SemiBold, color = TextPrimary) },
+        title = { Text("Create new portfolio", fontWeight = FontWeight.SemiBold, color = TextPrimary) },
         text = {
             Column {
                 Text("Portfolio Name", fontSize = 12.sp, color = TextSecondary)
@@ -405,8 +457,8 @@ fun CreatePortfolioDialog(
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BrandPrimary,
-                        unfocusedBorderColor = BorderDark,
+                        focusedBorderColor = VeltoGreen,
+                        unfocusedBorderColor = Border,
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
                     ),
@@ -433,8 +485,8 @@ fun CreatePortfolioDialog(
                     ),
                     isError = budgetError != null,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BrandPrimary,
-                        unfocusedBorderColor = BorderDark,
+                        focusedBorderColor = VeltoGreen,
+                        unfocusedBorderColor = Border,
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary,
                         errorBorderColor = LossRed
@@ -456,7 +508,7 @@ fun CreatePortfolioDialog(
                 ) {
                     presetBudgets.forEach { (label, amt) ->
                         val isSelected = budgetText == amt.toLong().toString()
-                        DhanFilterChip(
+                        VeltoFilterChip(
                             text = label,
                             selected = isSelected,
                             onClick = {
@@ -511,11 +563,11 @@ fun CreatePortfolioDialog(
                         onConfirm(name, budget, selectedColor)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = Lime, contentColor = VeltoGreen),
                 enabled = name.isNotBlank(),
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(26.dp)
             ) {
-                Text("Create Portfolio", fontWeight = FontWeight.SemiBold)
+                Text("Create portfolio", fontWeight = FontWeight.SemiBold)
             }
         },
         dismissButton = {
@@ -523,6 +575,6 @@ fun CreatePortfolioDialog(
                 Text("Cancel", color = TextPrimary)
             }
         },
-        containerColor = SurfaceDark
+        containerColor = Surface
     )
 }

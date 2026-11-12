@@ -50,16 +50,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.paperfolio.domain.model.Portfolio
-import com.paperfolio.ui.theme.BorderDark
-import com.paperfolio.ui.theme.BuyGreen
+import com.paperfolio.ui.theme.Border
+import com.paperfolio.ui.theme.HeroText
+import com.paperfolio.ui.theme.Lime
 import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.ProfitGreen
-import com.paperfolio.ui.theme.ProfitGreenBg
-import com.paperfolio.ui.theme.SurfaceCard
-import com.paperfolio.ui.theme.SurfaceElevatedDark
+import com.paperfolio.ui.theme.Surface
+import com.paperfolio.ui.theme.SurfaceMuted
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
 import com.paperfolio.ui.theme.TextTertiary
+import com.paperfolio.ui.theme.VeltoGreen
 import com.paperfolio.ui.utils.FormatUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,7 +97,7 @@ fun BuyStockBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = SurfaceCard
+        containerColor = Surface
     ) {
         Column(
             modifier = Modifier
@@ -114,10 +115,10 @@ fun BuyStockBottomSheet(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "BUY $tradingSymbol",
+                        text = "Buy $tradingSymbol",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ProfitGreen
+                        color = TextPrimary
                     )
                     Text(
                         text = companyName,
@@ -169,21 +170,16 @@ fun BuyStockBottomSheet(
                         val isSelected = portfolio.id == selectedPortfolioId
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) ProfitGreenBg else SurfaceElevatedDark)
-                                .border(
-                                    width = 1.dp,
-                                    color = if (isSelected) ProfitGreen else BorderDark,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(if (isSelected) VeltoGreen else SurfaceMuted)
                                 .clickable { selectedPortfolioId = portfolio.id }
-                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Text(
                                 text = portfolio.name,
                                 fontSize = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) ProfitGreen else TextPrimary
+                                color = if (isSelected) HeroText else TextSecondary
                             )
                         }
                     }
@@ -211,7 +207,7 @@ fun BuyStockBottomSheet(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(SurfaceElevatedDark)
+                                .background(SurfaceMuted)
                                 .clickable {
                                     val current = quantityText.toIntOrNull() ?: 0
                                     quantityText = (current + addQty).toString()
@@ -236,7 +232,7 @@ fun BuyStockBottomSheet(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(SurfaceElevatedDark)
+                        .background(SurfaceMuted)
                 ) {
                     Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = TextPrimary)
                 }
@@ -255,7 +251,7 @@ fun BuyStockBottomSheet(
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = ProfitGreen,
-                        unfocusedBorderColor = BorderDark,
+                        unfocusedBorderColor = Border,
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary,
                         errorBorderColor = LossRed
@@ -272,7 +268,7 @@ fun BuyStockBottomSheet(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(SurfaceElevatedDark)
+                        .background(SurfaceMuted)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Increase", tint = TextPrimary)
                 }
@@ -317,7 +313,7 @@ fun BuyStockBottomSheet(
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = ProfitGreen,
-                    unfocusedBorderColor = BorderDark,
+                    unfocusedBorderColor = Border,
                     focusedTextColor = TextPrimary,
                     unfocusedTextColor = TextPrimary,
                     errorBorderColor = LossRed
@@ -331,7 +327,7 @@ fun BuyStockBottomSheet(
             Spacer(modifier = Modifier.height(18.dp))
 
             // Order Summary
-            DhanCard {
+            VeltoCard {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -354,7 +350,7 @@ fun BuyStockBottomSheet(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Confirm Buy Button
+            // Confirm Buy Button — VELTO's lime pill, dark text.
             Button(
                 onClick = {
                     keyboardController?.hide()
@@ -364,18 +360,20 @@ fun BuyStockBottomSheet(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
+                    .height(52.dp),
                 enabled = hasEnoughCash && portfolios.isNotEmpty() && qtyValid && priceValid,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = BuyGreen,
-                    contentColor = Color.White
+                    containerColor = Lime,
+                    contentColor = VeltoGreen,
+                    disabledContainerColor = SurfaceMuted,
+                    disabledContentColor = TextTertiary
                 ),
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(26.dp)
             ) {
                 Text(
-                    text = if (!hasEnoughCash) "INSUFFICIENT FUNDS" else "BUY DELIVERY",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
+                    text = if (!hasEnoughCash) "Insufficient funds" else "Buy delivery",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -409,7 +407,7 @@ fun SellStockBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = SurfaceCard
+        containerColor = Surface
     ) {
         Column(
             modifier = Modifier
@@ -426,10 +424,10 @@ fun SellStockBottomSheet(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "SELL $tradingSymbol",
+                        text = "Sell $tradingSymbol",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = LossRed
+                        color = TextPrimary
                     )
                     Text(
                         text = companyName,
@@ -469,7 +467,7 @@ fun SellStockBottomSheet(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
-                        .background(SurfaceElevatedDark)
+                        .background(SurfaceMuted)
                         .clickable { quantityText = availableQuantity.toString() }
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
@@ -489,7 +487,7 @@ fun SellStockBottomSheet(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(SurfaceElevatedDark)
+                        .background(SurfaceMuted)
                 ) {
                     Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = TextPrimary)
                 }
@@ -508,7 +506,7 @@ fun SellStockBottomSheet(
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = LossRed,
-                        unfocusedBorderColor = BorderDark,
+                        unfocusedBorderColor = Border,
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary,
                         errorBorderColor = LossRed
@@ -525,7 +523,7 @@ fun SellStockBottomSheet(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(SurfaceElevatedDark)
+                        .background(SurfaceMuted)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Increase", tint = TextPrimary)
                 }
@@ -570,7 +568,7 @@ fun SellStockBottomSheet(
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = LossRed,
-                    unfocusedBorderColor = BorderDark,
+                    unfocusedBorderColor = Border,
                     focusedTextColor = TextPrimary,
                     unfocusedTextColor = TextPrimary,
                     errorBorderColor = LossRed
@@ -583,7 +581,7 @@ fun SellStockBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            DhanCard {
+            VeltoCard {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -624,18 +622,18 @@ fun SellStockBottomSheet(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
+                    .height(52.dp),
                 enabled = qtyValid && priceValid,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = LossRed,
                     contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(26.dp)
             ) {
                 Text(
-                    text = "CONFIRM SELL",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "Confirm sell",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))

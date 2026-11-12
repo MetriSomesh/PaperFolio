@@ -45,19 +45,24 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paperfolio.domain.model.ChartPoint
 import com.paperfolio.domain.model.StockHolding
 import com.paperfolio.ui.components.BuyStockBottomSheet
-import com.paperfolio.ui.components.DhanCard
-import com.paperfolio.ui.components.DhanDivider
-import com.paperfolio.ui.components.DhanSectionHeader
+import com.paperfolio.ui.components.HeroStat
+import com.paperfolio.ui.components.VeltoCard
+import com.paperfolio.ui.components.VeltoDivider
+import com.paperfolio.ui.components.VeltoHeroCard
+import com.paperfolio.ui.components.VeltoHeroDivider
+import com.paperfolio.ui.components.VeltoPrimaryButton
+import com.paperfolio.ui.components.VeltoSectionHeader
 import com.paperfolio.ui.components.MetricBadge
 import com.paperfolio.ui.components.SellStockBottomSheet
 import com.paperfolio.ui.components.StockHoldingCard
 import com.paperfolio.ui.components.StockLineChart
 import com.paperfolio.ui.components.TimePeriodSelector
-import com.paperfolio.ui.theme.BackgroundDark
-import com.paperfolio.ui.theme.BrandPrimary
-import com.paperfolio.ui.theme.BuyGreen
+import com.paperfolio.ui.theme.AppBackground
+import com.paperfolio.ui.theme.VeltoGreen
+import com.paperfolio.ui.theme.HeroText
+import com.paperfolio.ui.theme.HeroTextSecondary
 import com.paperfolio.ui.theme.LossRedBg
-import com.paperfolio.ui.theme.LossRedDark
+import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.ProfitGreen
 import com.paperfolio.ui.theme.ProfitGreenBg
 import com.paperfolio.ui.theme.TextPrimary
@@ -102,10 +107,10 @@ fun PortfolioDetailScreen(
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppBackground)
             )
         },
-        containerColor = BackgroundDark
+        containerColor = AppBackground
     ) { paddingValues ->
         if (uiState.isLoading && uiState.portfolio == null) {
             Box(
@@ -114,7 +119,7 @@ fun PortfolioDetailScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = BrandPrimary)
+                CircularProgressIndicator(color = VeltoGreen)
             }
         } else if (uiState.errorMessage != null && uiState.portfolio == null) {
             // Was: a load failure rendered an empty list with no message
@@ -136,13 +141,10 @@ fun PortfolioDetailScreen(
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(14.dp))
-                    Button(
-                        onClick = { viewModel.loadPortfolio() },
-                        colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("Retry", fontWeight = FontWeight.SemiBold)
-                    }
+                    VeltoPrimaryButton(
+                        text = "Retry",
+                        onClick = { viewModel.loadPortfolio() }
+                    )
                 }
             }
         } else {
@@ -154,67 +156,48 @@ fun PortfolioDetailScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Overview: big value, P&L as plain coloured text (Dhan).
+                // Overview: VELTO's dark hero card — big value, P&L in
+                // the light green/red, then invested / current / cash.
                 if (portfolio != null) {
                     item {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Total Portfolio Value", fontSize = 12.sp, color = TextSecondary)
-                                highlightedChartPoint?.let { pt ->
-                                    Text(pt.formattedTime, fontSize = 11.sp, color = BrandPrimary, fontWeight = FontWeight.SemiBold)
+                        VeltoHeroCard {
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Total portfolio value", fontSize = 12.sp, color = HeroTextSecondary)
+                                    highlightedChartPoint?.let { pt ->
+                                        Text(pt.formattedTime, fontSize = 11.sp, color = HeroText, fontWeight = FontWeight.SemiBold)
+                                    }
                                 }
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = FormatUtils.formatInr(highlightedChartPoint?.price ?: portfolio.totalNetWorth),
-                                fontSize = 30.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = TextPrimary
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            MetricBadge(
-                                value = portfolio.totalPnl,
-                                percent = portfolio.totalPnlPercent
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            DhanDivider()
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column {
-                                    Text("Invested", fontSize = 11.sp, color = TextSecondary)
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        FormatUtils.formatInr(portfolio.investedAmount),
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = TextPrimary
-                                    )
-                                }
-                                Column {
-                                    Text("Current Value", fontSize = 11.sp, color = TextSecondary)
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        FormatUtils.formatInr(portfolio.currentValue),
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = TextPrimary
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text("Available Cash", fontSize = 11.sp, color = TextSecondary)
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = FormatUtils.formatInr(highlightedChartPoint?.price ?: portfolio.totalNetWorth),
+                                    fontSize = 34.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = HeroText
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                MetricBadge(
+                                    value = portfolio.totalPnl,
+                                    percent = portfolio.totalPnlPercent,
+                                    onDark = true
+                                )
+                                Spacer(modifier = Modifier.height(18.dp))
+                                VeltoHeroDivider()
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    HeroStat("Invested", FormatUtils.formatInr(portfolio.investedAmount))
+                                    HeroStat("Current value", FormatUtils.formatInr(portfolio.currentValue))
+                                    HeroStat(
+                                        "Available cash",
                                         FormatUtils.formatInr(portfolio.cashBalance),
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = TextPrimary
+                                        alignEnd = true
                                     )
                                 }
                             }
@@ -233,7 +216,7 @@ fun PortfolioDetailScreen(
                     // Interactive Line Chart
                     if (uiState.chartPoints.isNotEmpty()) {
                         item {
-                            DhanCard {
+                            VeltoCard {
                                 StockLineChart(
                                     points = uiState.chartPoints,
                                     isPositive = portfolio.totalPnl >= 0,
@@ -256,23 +239,23 @@ fun PortfolioDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            DhanSectionHeader(text = "HOLDINGS (${uiState.holdings.size})")
+                            VeltoSectionHeader(text = "Holdings (${uiState.holdings.size})")
                             TextButton(onClick = onNavigateToSearch) {
-                                Text("+ Add Stock", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = BrandPrimary)
+                                Text("+ Add stock", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = VeltoGreen)
                             }
                         }
                     }
 
                     if (uiState.holdings.isEmpty()) {
                         item {
-                            DhanCard {
+                            VeltoCard {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(26.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Text("No Stocks Parked in This Portfolio", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                    Text("No stocks parked in this portfolio", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
                                         text = "Search Indian stocks or ETFs and buy them with delivery to track them here.",
@@ -281,19 +264,16 @@ fun PortfolioDetailScreen(
                                         textAlign = TextAlign.Center
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
-                                    Button(
-                                        onClick = onNavigateToSearch,
-                                        colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
-                                        shape = RoundedCornerShape(10.dp)
-                                    ) {
-                                        Text("Explore & Buy Stocks", fontWeight = FontWeight.SemiBold)
-                                    }
+                                    VeltoPrimaryButton(
+                                        text = "Explore & buy stocks",
+                                        onClick = onNavigateToSearch
+                                    )
                                 }
                             }
                         }
                     } else {
                         item {
-                            DhanCard {
+                            VeltoCard {
                                 Column(modifier = Modifier.padding(horizontal = 14.dp)) {
                                     uiState.holdings.forEachIndexed { index, holding ->
                                         Column {
@@ -324,7 +304,7 @@ fun PortfolioDetailScreen(
                                                     onClick = { selectedHoldingToSell = holding },
                                                     colors = ButtonDefaults.buttonColors(
                                                         containerColor = LossRedBg,
-                                                        contentColor = LossRedDark
+                                                        contentColor = LossRed
                                                     ),
                                                     shape = RoundedCornerShape(8.dp),
                                                     modifier = Modifier.height(34.dp),
@@ -335,7 +315,7 @@ fun PortfolioDetailScreen(
                                             }
                                         }
                                         if (index < uiState.holdings.size - 1) {
-                                            DhanDivider()
+                                            VeltoDivider()
                                         }
                                     }
                                 }

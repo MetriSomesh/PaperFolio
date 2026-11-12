@@ -49,12 +49,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paperfolio.BuildConfig
-import com.paperfolio.ui.components.DhanCard
-import com.paperfolio.ui.components.DhanFilterChip
-import com.paperfolio.ui.theme.BackgroundDark
-import com.paperfolio.ui.theme.BorderDark
-import com.paperfolio.ui.theme.BrandPrimary
-import com.paperfolio.ui.theme.BuyGreen
+import com.paperfolio.ui.components.VeltoCard
+import com.paperfolio.ui.components.VeltoFilterChip
+import com.paperfolio.ui.theme.AppBackground
+import com.paperfolio.ui.theme.Border
+import com.paperfolio.ui.theme.VeltoGreen
+import com.paperfolio.ui.theme.Lime
 import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.LossRedBg
 import com.paperfolio.ui.theme.ProfitGreen
@@ -85,10 +85,10 @@ fun SettingsScreen(
                         color = TextPrimary
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppBackground)
             )
         },
-        containerColor = BackgroundDark
+        containerColor = AppBackground
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -99,12 +99,12 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Add Newly Listed Stock Section
-            DhanCard {
+            VeltoCard {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.AddBusiness, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(22.dp))
+                        Icon(Icons.Default.AddBusiness, contentDescription = null, tint = VeltoGreen, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add Newly Listed Stock", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                        Text("Add newly listed stock", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
@@ -128,8 +128,8 @@ fun SettingsScreen(
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = BrandPrimary,
-                            unfocusedBorderColor = BorderDark,
+                            focusedBorderColor = VeltoGreen,
+                            unfocusedBorderColor = Border,
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary
                         ),
@@ -142,7 +142,7 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         listOf("NSE", "BSE").forEach { exch ->
-                            DhanFilterChip(
+                            VeltoFilterChip(
                                 text = exch,
                                 selected = exch == selectedExchange,
                                 onClick = { selectedExchange = exch }
@@ -159,15 +159,15 @@ fun SettingsScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(46.dp),
+                            .height(52.dp),
                         enabled = newStockSymbol.isNotBlank() && !uiState.isAddingStock,
-                        colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
-                        shape = RoundedCornerShape(10.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = Lime, contentColor = VeltoGreen),
+                        shape = RoundedCornerShape(26.dp)
                     ) {
                         if (uiState.isAddingStock) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                            CircularProgressIndicator(color = VeltoGreen, modifier = Modifier.size(20.dp))
                         } else {
-                            Text("Validate & Add to App", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            Text("Validate & add to app", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                         }
                     }
 
@@ -208,16 +208,16 @@ fun SettingsScreen(
             }
 
             // Database Info Card
-            DhanCard {
+            VeltoCard {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Stock Master Database", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                    Text("Stock master database", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Active Stocks in App", fontSize = 13.sp, color = TextSecondary)
-                        Text("${uiState.totalStockCount} instruments", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = BrandPrimary)
+                        Text("${uiState.totalStockCount} instruments", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = VeltoGreen)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(
@@ -231,7 +231,7 @@ fun SettingsScreen(
             }
 
             // About App Card
-            DhanCard {
+            VeltoCard {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("About PaperFolio", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                     Spacer(modifier = Modifier.height(6.dp))

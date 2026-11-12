@@ -8,10 +8,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.paperfolio.R
 
-// Dhan-style typography: Inter (variable font, one file carries all
+// VELTO-style typography: Inter (variable font, one file carries all
 // weights — 400/500/600/700/800 are picked from its weight axis).
-// Scale mirrors Dhan's hierarchy: big ExtraBold money figures, Semibold
-// symbols and titles, small grey labels.
+// VELTO's hierarchy, from the reference screens: huge ExtraBold money
+// figures with tight tracking (the €8,240.00 hero), Semibold
+// sentence-case section titles ("Recent activity"), small muted labels.
+// No all-caps headers anywhere — VELTO never shouts.
 val InterFontFamily = FontFamily(
     Font(R.font.inter, FontWeight.Normal),
     Font(R.font.inter, FontWeight.Medium),
@@ -24,8 +26,8 @@ val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.ExtraBold,
-        fontSize = 30.sp,
-        lineHeight = 36.sp,
+        fontSize = 34.sp,
+        lineHeight = 40.sp,
         letterSpacing = (-0.5).sp,
         color = TextPrimary
     ),

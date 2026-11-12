@@ -3,8 +3,6 @@ package com.paperfolio
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -14,10 +12,6 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +29,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.paperfolio.ui.components.VeltoNavTab
+import com.paperfolio.ui.components.VeltoPillNav
 import com.paperfolio.ui.home.HomeScreen
 import com.paperfolio.ui.home.HomeViewModel
 import com.paperfolio.ui.pnl.PnlScreen
@@ -47,15 +43,11 @@ import com.paperfolio.ui.settings.SettingsScreen
 import com.paperfolio.ui.settings.SettingsViewModel
 import com.paperfolio.ui.stockdetail.StockDetailScreen
 import com.paperfolio.ui.stockdetail.StockDetailViewModel
-import com.paperfolio.ui.theme.BackgroundDark
-import com.paperfolio.ui.theme.BorderDark
-import com.paperfolio.ui.theme.BrandPrimary
+import com.paperfolio.ui.theme.AppBackground
 import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.PaperFolioTheme
-import com.paperfolio.ui.theme.SurfaceDark
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
-import com.paperfolio.ui.theme.TextTertiary
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector? = null) {
     object Home : Screen("home", "Portfolios", Icons.Default.PieChart)
@@ -88,7 +80,7 @@ class MainActivity : ComponentActivity() {
             setContent {
                 androidx.compose.material3.Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = BackgroundDark
+                    color = AppBackground
                 ) {
                     androidx.compose.foundation.layout.Column(
                         modifier = Modifier
@@ -149,55 +141,26 @@ fun MainAppNavigation(app: PaperFolioApp) {
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
-                // Dhan bottom nav: white bar, hairline top border, no
-                // pill indicator — selected tab is green icon + label.
-                NavigationBar(
-                    containerColor = SurfaceDark,
-                    tonalElevation = 0.dp,
-                    modifier = Modifier.border(
-                        width = 1.dp,
-                        color = BorderDark
-                    )
-                ) {
-                    bottomNavItems.forEach { screen ->
-                        val selected = currentRoute == screen.route
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                screen.icon?.let {
-                                    Icon(it, contentDescription = screen.title)
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = screen.title,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.SemiBold
-                                    else androidx.compose.ui.text.font.FontWeight.Medium
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = BrandPrimary,
-                                selectedTextColor = BrandPrimary,
-                                unselectedIconColor = TextTertiary,
-                                unselectedTextColor = TextTertiary,
-                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent
-                            )
-                        )
+                // VELTO floating pill nav: white rounded bar, the active
+                // tab a dark-green pill with white icon + label.
+                VeltoPillNav(
+                    tabs = bottomNavItems.mapNotNull { screen ->
+                        screen.icon?.let { VeltoNavTab(screen.route, screen.title, it) }
+                    },
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
-                }
+                )
             }
         },
-        containerColor = BackgroundDark
+        containerColor = AppBackground
     ) { innerPadding ->
         NavHost(
             navController = navController,

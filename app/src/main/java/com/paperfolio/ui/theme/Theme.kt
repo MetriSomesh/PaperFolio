@@ -11,25 +11,26 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Dhan-style LIGHT color scheme: white background, hairline borders,
-// green primary, red for losses. There is no dark scheme — Dhan's app
-// is light, and the old dark theme is what the user asked to replace.
+// VELTO-style LIGHT color scheme: off-white background, white cards,
+// dark-green hero / primary, lime CTA. There is no dark scheme —
+// VELTO's app screens are light; the dark green lives only in the
+// hero card, the active nav pill, and selected states.
 private val LightColorScheme = lightColorScheme(
-    primary = BrandPrimary,
-    onPrimary = BackgroundDark,
+    primary = VeltoGreen,
+    onPrimary = HeroText,
     primaryContainer = ProfitGreenBg,
-    onPrimaryContainer = BrandPrimary,
-    secondary = BrandAccent,
-    onSecondary = BackgroundDark,
-    background = BackgroundDark,
+    onPrimaryContainer = VeltoGreen,
+    secondary = VeltoGreen,
+    onSecondary = HeroText,
+    background = AppBackground,
     onBackground = TextPrimary,
-    surface = SurfaceDark,
+    surface = Surface,
     onSurface = TextPrimary,
-    surfaceVariant = SurfaceElevatedDark,
+    surfaceVariant = SurfaceMuted,
     onSurfaceVariant = TextSecondary,
-    outline = BorderDark,
+    outline = Border,
     error = LossRed,
-    onError = BackgroundDark
+    onError = Surface
 )
 
 private fun Context.findActivity(): Activity? {
@@ -52,9 +53,9 @@ fun PaperFolioTheme(
             val activity = view.context.findActivity()
             if (activity != null) {
                 val window = activity.window
-                window.statusBarColor = BackgroundDark.toArgb()
-                window.navigationBarColor = BackgroundDark.toArgb()
-                // Light bars: dark icons on white.
+                window.statusBarColor = AppBackground.toArgb()
+                window.navigationBarColor = AppBackground.toArgb()
+                // Light bars: dark icons on off-white.
                 WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
                 WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = true
             }

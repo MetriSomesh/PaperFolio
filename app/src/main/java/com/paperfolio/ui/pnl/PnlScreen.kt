@@ -47,16 +47,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paperfolio.data.local.entity.TradeEntity
-import com.paperfolio.ui.components.DhanCard
-import com.paperfolio.ui.components.DhanDivider
-import com.paperfolio.ui.components.DhanSectionHeader
+import com.paperfolio.ui.components.VeltoCard
+import com.paperfolio.ui.components.VeltoDivider
+import com.paperfolio.ui.components.VeltoSectionHeader
 import com.paperfolio.ui.components.TimePeriodSelector
-import com.paperfolio.ui.theme.BackgroundDark
-import com.paperfolio.ui.theme.BrandPrimary
-import com.paperfolio.ui.theme.BuyGreen
+import com.paperfolio.ui.theme.AppBackground
+import com.paperfolio.ui.theme.VeltoGreen
+import com.paperfolio.ui.theme.Lime
 import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.ProfitGreen
-import com.paperfolio.ui.theme.SurfaceCard
+import com.paperfolio.ui.theme.Surface
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
 import com.paperfolio.ui.theme.TextTertiary
@@ -95,10 +95,10 @@ fun PnlScreen(
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppBackground)
             )
         },
-        containerColor = BackgroundDark
+        containerColor = AppBackground
     ) { paddingValues ->
         if (uiState.isLoading) {
             Box(
@@ -107,7 +107,7 @@ fun PnlScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = BrandPrimary)
+                CircularProgressIndicator(color = VeltoGreen)
             }
         } else {
             val netTotalPnl = uiState.totalRealizedPnl + uiState.totalUnrealizedPnl
@@ -129,7 +129,7 @@ fun PnlScreen(
                     )
                 }
 
-                // Overall Net P&L — Dhan style: big number, plain stats row.
+                // Overall Net P&L — big number, plain stats row.
                 // NOTE: the old header said "Total Net P&L (1M)" which was
                 // misleading — unrealized P&L is always current holdings,
                 // only realized P&L follows the selected period. The label
@@ -140,7 +140,7 @@ fun PnlScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = FormatUtils.formatInr(netTotalPnl, showSign = true),
-                            fontSize = 30.sp,
+                            fontSize = 34.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = if (isNetProfit) ProfitGreen else LossRed
                         )
@@ -151,7 +151,7 @@ fun PnlScreen(
                             color = TextTertiary
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        DhanDivider()
+                        VeltoDivider()
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -193,12 +193,12 @@ fun PnlScreen(
 
                 // Portfolio Breakdown
                 item {
-                    DhanSectionHeader(text = "BREAKDOWN BY PORTFOLIO")
+                    VeltoSectionHeader(text = "Breakdown by portfolio")
                 }
 
                 if (uiState.portfolioBreakdown.isEmpty()) {
                     item {
-                        DhanCard {
+                        VeltoCard {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -211,7 +211,7 @@ fun PnlScreen(
                     }
                 } else {
                     item {
-                        DhanCard {
+                        VeltoCard {
                             Column(modifier = Modifier.padding(horizontal = 14.dp)) {
                                 uiState.portfolioBreakdown.forEachIndexed { index, pItem ->
                                     Row(
@@ -226,7 +226,7 @@ fun PnlScreen(
                                             val tagColor = try {
                                                 Color(android.graphics.Color.parseColor(pItem.colorTag))
                                             } catch (e: Exception) {
-                                                BrandPrimary
+                                                VeltoGreen
                                             }
                                             Box(
                                                 modifier = Modifier
@@ -252,7 +252,7 @@ fun PnlScreen(
                                         )
                                     }
                                     if (index < uiState.portfolioBreakdown.size - 1) {
-                                        DhanDivider()
+                                        VeltoDivider()
                                     }
                                 }
                             }
@@ -262,12 +262,12 @@ fun PnlScreen(
 
                 // Closed Trades History
                 item {
-                    DhanSectionHeader(text = "REALIZED TRADES HISTORY (${uiState.closedTrades.size})")
+                    VeltoSectionHeader(text = "Realized trades history (${uiState.closedTrades.size})")
                 }
 
                 if (uiState.closedTrades.isEmpty()) {
                     item {
-                        DhanCard {
+                        VeltoCard {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -280,12 +280,12 @@ fun PnlScreen(
                     }
                 } else {
                     item {
-                        DhanCard {
+                        VeltoCard {
                             Column(modifier = Modifier.padding(horizontal = 14.dp)) {
                                 uiState.closedTrades.forEachIndexed { index, trade ->
                                     ClosedTradeItemRow(trade = trade)
                                     if (index < uiState.closedTrades.size - 1) {
-                                        DhanDivider()
+                                        VeltoDivider()
                                     }
                                 }
                             }
@@ -311,7 +311,7 @@ fun PnlScreen(
                         showCustomDateDialog = false
                     }
                 ) {
-                    Text("Apply Range", color = BrandPrimary, fontWeight = FontWeight.SemiBold)
+                    Text("Apply Range", color = VeltoGreen, fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
@@ -320,21 +320,21 @@ fun PnlScreen(
                 }
             },
             colors = DatePickerDefaults.colors(
-                containerColor = SurfaceCard
+                containerColor = Surface
             )
         ) {
             DateRangePicker(
                 state = dateRangePickerState,
                 title = { Text("Select Date Range for P&L", color = TextPrimary, modifier = Modifier.padding(16.dp), fontWeight = FontWeight.SemiBold) },
                 colors = DatePickerDefaults.colors(
-                    containerColor = SurfaceCard,
+                    containerColor = Surface,
                     titleContentColor = TextPrimary,
                     headlineContentColor = TextPrimary,
-                    selectedDayContainerColor = BrandPrimary,
-                    dayInSelectionRangeContainerColor = BrandPrimary.copy(alpha = 0.15f),
+                    selectedDayContainerColor = VeltoGreen,
+                    dayInSelectionRangeContainerColor = VeltoGreen.copy(alpha = 0.15f),
                     selectedDayContentColor = Color.White,
-                    todayDateBorderColor = BrandPrimary,
-                    todayContentColor = BrandPrimary
+                    todayDateBorderColor = VeltoGreen,
+                    todayContentColor = VeltoGreen
                 )
             )
         }

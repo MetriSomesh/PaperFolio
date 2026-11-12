@@ -50,18 +50,19 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paperfolio.domain.model.ChartPoint
 import com.paperfolio.ui.components.BuyStockBottomSheet
-import com.paperfolio.ui.components.DhanCard
-import com.paperfolio.ui.components.DhanDivider
-import com.paperfolio.ui.components.DhanSectionHeader
+import com.paperfolio.ui.components.VeltoCard
+import com.paperfolio.ui.components.VeltoDivider
+import com.paperfolio.ui.components.VeltoPrimaryButton
+import com.paperfolio.ui.components.VeltoSectionHeader
 import com.paperfolio.ui.components.ExchangeBadge
 import com.paperfolio.ui.components.StockLineChart
 import com.paperfolio.ui.components.TimePeriodSelector
-import com.paperfolio.ui.theme.BackgroundDark
-import com.paperfolio.ui.theme.BrandPrimary
-import com.paperfolio.ui.theme.BuyGreen
+import com.paperfolio.ui.theme.AppBackground
+import com.paperfolio.ui.theme.VeltoGreen
+import com.paperfolio.ui.theme.Lime
 import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.ProfitGreen
-import com.paperfolio.ui.theme.SurfaceElevatedDark
+import com.paperfolio.ui.theme.SurfaceMuted
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
 import com.paperfolio.ui.theme.TextTertiary
@@ -122,7 +123,7 @@ fun StockDetailScreen(
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppBackground)
             )
         },
         bottomBar = {
@@ -130,24 +131,18 @@ fun StockDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(BackgroundDark)
+                        .background(AppBackground)
                         .navigationBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Button(
-                        onClick = { showBuySheet = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("BUY DELIVERY", fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    }
+                    VeltoPrimaryButton(
+                        text = "Buy delivery",
+                        onClick = { showBuySheet = true }
+                    )
                 }
             }
         },
-        containerColor = BackgroundDark
+        containerColor = AppBackground
     ) { paddingValues ->
         if (uiState.isLoading && uiState.stockDetail == null) {
             Box(
@@ -156,7 +151,7 @@ fun StockDetailScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = BrandPrimary)
+                CircularProgressIndicator(color = VeltoGreen)
             }
         } else if (uiState.errorMessage != null && uiState.stockDetail == null) {
             Box(
@@ -168,13 +163,10 @@ fun StockDetailScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                     Text(uiState.errorMessage ?: "Error loading stock", color = TextSecondary, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(14.dp))
-                    Button(
-                        onClick = { viewModel.loadStockData(uiState.selectedRange) },
-                        colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("Retry", fontWeight = FontWeight.SemiBold)
-                    }
+                    VeltoPrimaryButton(
+                        text = "Retry",
+                        onClick = { viewModel.loadStockData(uiState.selectedRange) }
+                    )
                 }
             }
         } else {
@@ -198,7 +190,7 @@ fun StockDetailScreen(
                     Column {
                         Text(
                             text = FormatUtils.formatInr(displayPrice),
-                            fontSize = 30.sp,
+                            fontSize = 34.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = TextPrimary
                         )
@@ -235,7 +227,7 @@ fun StockDetailScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Interactive Chart
-                DhanCard {
+                VeltoCard {
                     StockLineChart(
                         points = stock.chartPoints,
                         isPositive = isPositive,
@@ -252,11 +244,11 @@ fun StockDetailScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Dhan-style Performance Range Bars
-                DhanSectionHeader(text = "PERFORMANCE")
+                // Performance range bars
+                VeltoSectionHeader(text = "Performance")
                 Spacer(modifier = Modifier.height(8.dp))
 
-                DhanCard {
+                VeltoCard {
                     Column(modifier = Modifier.padding(16.dp)) {
                         RangeSliderView(
                             title = "Today's Low / High",
@@ -276,22 +268,22 @@ fun StockDetailScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Key Statistics as Dhan rows with dividers
-                DhanSectionHeader(text = "KEY STATISTICS")
+                // Key statistics as rows with dividers
+                VeltoSectionHeader(text = "Key statistics")
                 Spacer(modifier = Modifier.height(8.dp))
 
-                DhanCard {
+                VeltoCard {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                         StatRow(label = "Day High", value = FormatUtils.formatInr(stock.dayHigh))
-                        DhanDivider()
+                        VeltoDivider()
                         StatRow(label = "Day Low", value = FormatUtils.formatInr(stock.dayLow))
-                        DhanDivider()
+                        VeltoDivider()
                         StatRow(label = "52W High", value = FormatUtils.formatInr(stock.fiftyTwoWeekHigh))
-                        DhanDivider()
+                        VeltoDivider()
                         StatRow(label = "52W Low", value = FormatUtils.formatInr(stock.fiftyTwoWeekLow))
-                        DhanDivider()
+                        VeltoDivider()
                         StatRow(label = "Prev. Close", value = FormatUtils.formatInr(stock.prevClose))
-                        DhanDivider()
+                        VeltoDivider()
                         StatRow(label = "Volume", value = FormatUtils.formatVolume(stock.volume))
                     }
                 }
@@ -343,7 +335,7 @@ fun RangeSliderView(
         Text(title, fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Dhan-style range track: thin grey track, green fill to the
+        // Range track: thin grey track, dark-green fill to the
         // marker, dot at the current price.
         BoxWithConstraints(
             modifier = Modifier
@@ -356,14 +348,14 @@ fun RangeSliderView(
                     .fillMaxWidth()
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(SurfaceElevatedDark)
+                    .background(SurfaceMuted)
             )
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fraction)
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(BrandPrimary)
+                    .background(VeltoGreen)
             )
             val dotOffset = with(LocalDensity.current) {
                 (maxWidth * fraction).toPx()
@@ -380,7 +372,7 @@ fun RangeSliderView(
                     modifier = Modifier
                         .fillMaxSize()
                         .clip(CircleShape)
-                        .background(BrandPrimary)
+                        .background(VeltoGreen)
                 )
             }
         }

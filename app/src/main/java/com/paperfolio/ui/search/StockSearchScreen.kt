@@ -41,15 +41,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paperfolio.data.local.entity.StockMasterEntity
-import com.paperfolio.ui.components.DhanCard
-import com.paperfolio.ui.components.DhanDivider
-import com.paperfolio.ui.components.DhanFilterChip
-import com.paperfolio.ui.components.DhanSectionHeader
+import com.paperfolio.ui.components.VeltoCard
+import com.paperfolio.ui.components.VeltoDivider
+import com.paperfolio.ui.components.VeltoFilterChip
+import com.paperfolio.ui.components.VeltoIconTile
+import com.paperfolio.ui.components.VeltoSectionHeader
 import com.paperfolio.ui.components.ExchangeBadge
-import com.paperfolio.ui.theme.BackgroundDark
-import com.paperfolio.ui.theme.BorderDark
-import com.paperfolio.ui.theme.BrandPrimary
-import com.paperfolio.ui.theme.SurfaceElevatedDark
+import com.paperfolio.ui.theme.AppBackground
+import com.paperfolio.ui.theme.Border
+import com.paperfolio.ui.theme.VeltoGreen
+import com.paperfolio.ui.theme.SurfaceMuted
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
 import com.paperfolio.ui.theme.TextTertiary
@@ -83,12 +84,12 @@ fun StockSearchScreen(
                         },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = BrandPrimary,
-                            unfocusedBorderColor = BorderDark,
+                            focusedBorderColor = VeltoGreen,
+                            unfocusedBorderColor = Border,
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary,
-                            focusedContainerColor = SurfaceElevatedDark,
-                            unfocusedContainerColor = SurfaceElevatedDark
+                            focusedContainerColor = SurfaceMuted,
+                            unfocusedContainerColor = SurfaceMuted
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
@@ -101,10 +102,10 @@ fun StockSearchScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppBackground)
             )
         },
-        containerColor = BackgroundDark
+        containerColor = AppBackground
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -120,7 +121,7 @@ fun StockSearchScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf("ALL", "NSE", "BSE", "ETF").forEach { exch ->
-                    DhanFilterChip(
+                    VeltoFilterChip(
                         text = exch,
                         selected = exch == uiState.selectedExchange,
                         onClick = { viewModel.onExchangeFilterSelected(exch) }
@@ -130,7 +131,7 @@ fun StockSearchScreen(
 
             if (uiState.isSearching) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = BrandPrimary, modifier = Modifier.size(32.dp))
+                    CircularProgressIndicator(color = VeltoGreen, modifier = Modifier.size(32.dp))
                 }
             } else if (uiState.results.isEmpty() && uiState.query.isNotBlank()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -154,15 +155,15 @@ fun StockSearchScreen(
                                     .padding(vertical = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(16.dp))
+                                Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = VeltoGreen, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                DhanSectionHeader(text = "POPULAR & TRENDING")
+                                VeltoSectionHeader(text = "Popular & trending")
                             }
                         }
                     }
 
                     item {
-                        DhanCard {
+                        VeltoCard {
                             Column(modifier = Modifier.padding(horizontal = 14.dp)) {
                                 uiState.results.forEachIndexed { index, stock ->
                                     StockSearchResultRow(
@@ -170,7 +171,7 @@ fun StockSearchScreen(
                                         onClick = { onStockSelected(stock.yahooSymbol) }
                                     )
                                     if (index < uiState.results.size - 1) {
-                                        DhanDivider()
+                                        VeltoDivider()
                                     }
                                 }
                             }
@@ -195,6 +196,8 @@ fun StockSearchResultRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        VeltoIconTile(label = stock.tradingSymbol)
+        Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -219,7 +222,7 @@ fun StockSearchResultRow(
             text = "Trade >",
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
-            color = BrandPrimary
+            color = VeltoGreen
         )
     }
 }
