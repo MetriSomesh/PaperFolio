@@ -1,8 +1,7 @@
 package com.paperfolio.data.repository
 
-import com.paperfolio.data.local.dao.PortfolioDao
-import com.paperfolio.data.local.dao.StockMasterDao
-import com.paperfolio.data.local.dao.TradeDao
+import androidx.room.withTransaction
+import com.paperfolio.data.local.AppDatabase
 import com.paperfolio.data.local.entity.TradeEntity
 import com.paperfolio.domain.model.StockHolding
 import com.paperfolio.domain.model.Trade
@@ -12,10 +11,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 class TradeRepository(
-    private val tradeDao: TradeDao,
-    private val portfolioDao: PortfolioDao,
-    private val stockMasterDao: StockMasterDao
+    private val database: AppDatabase
 ) {
+    private val tradeDao get() = database.tradeDao()
+    private val portfolioDao get() = database.portfolioDao()
+    private val stockMasterDao get() = database.stockMasterDao()
 
     fun getTradesForPortfolioFlow(portfolioId: Long): Flow<List<Trade>> {
         return tradeDao.getTradesForPortfolio(portfolioId).map { entities ->
@@ -33,32 +33,38 @@ class TradeRepository(
         if (quantity <= 0) return@withContext Result.failure(Exception("Quantity must be greater than 0"))
         if (price <= 0.0) return@withContext Result.failure(Exception("Price must be greater than 0"))
 
-        val portfolio = portfolioDao.getPortfolioByIdOnce(portfolioId)
-            ?: return@withContext Result.failure(Exception("Portfolio not found"))
-
-        val totalCost = quantity * price
-        if (portfolio.cashBalance < totalCost) {
-            return@withContext Result.failure(
-                Exception("Insufficient cash balance! Required: ₹${String.format("%.2f", totalCost)}, Available: ₹${String.format("%.2f", portfolio.cashBalance)}")
-            )
+        try {
+            val totalCost = quantity * price
+            // Balance check + cash deduction + trade insert run in ONE
+            // transaction: the check sees the same snapshot the write
+            // uses, and if the app is killed mid-write both roll back
+            // together — cash and holdings can never disagree.
+            val tradeId = database.withTransaction {
+                val portfolio = portfolioDao.getPortfolioByIdOnce(portfolioId)
+                    ?: throw IllegalStateException("Portfolio not found")
+                if (portfolio.cashBalance < totalCost) {
+                    throw IllegalStateException(
+                        "Insufficient cash balance! Required: ₹${String.format("%.2f", totalCost)}, " +
+                            "Available: ₹${String.format("%.2f", portfolio.cashBalance)}"
+                    )
+                }
+                portfolioDao.updateCashBalance(portfolioId, portfolio.cashBalance - totalCost)
+                tradeDao.insertTrade(
+                    TradeEntity(
+                        portfolioId = portfolioId,
+                        yahooSymbol = yahooSymbol,
+                        type = "BUY",
+                        quantity = quantity,
+                        price = price,
+                        timestamp = System.currentTimeMillis(),
+                        notes = notes
+                    )
+                )
+            }
+            Result.success(tradeId)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-
-        // Deduct cash
-        val updatedCash = portfolio.cashBalance - totalCost
-        portfolioDao.updateCashBalance(portfolioId, updatedCash)
-
-        // Insert trade
-        val trade = TradeEntity(
-            portfolioId = portfolioId,
-            yahooSymbol = yahooSymbol,
-            type = "BUY",
-            quantity = quantity,
-            price = price,
-            timestamp = System.currentTimeMillis(),
-            notes = notes
-        )
-        val tradeId = tradeDao.insertTrade(trade)
-        Result.success(tradeId)
     }
 
     suspend fun executeSell(
@@ -71,49 +77,53 @@ class TradeRepository(
         if (quantity <= 0) return@withContext Result.failure(Exception("Quantity must be greater than 0"))
         if (price <= 0.0) return@withContext Result.failure(Exception("Price must be greater than 0"))
 
-        val portfolio = portfolioDao.getPortfolioByIdOnce(portfolioId)
-            ?: return@withContext Result.failure(Exception("Portfolio not found"))
+        try {
+            val totalRevenue = quantity * price
+            // Holdings check + cash refund + trade insert in ONE
+            // transaction (same atomicity guarantee as executeBuy).
+            val tradeId = database.withTransaction {
+                val portfolio = portfolioDao.getPortfolioByIdOnce(portfolioId)
+                    ?: throw IllegalStateException("Portfolio not found")
 
-        val trades = tradeDao.getTradesForStock(portfolioId, yahooSymbol)
-        var totalBoughtQty = 0
-        var totalBoughtCost = 0.0
-        var totalSoldQty = 0
+                val trades = tradeDao.getTradesForStock(portfolioId, yahooSymbol)
+                var totalBoughtQty = 0
+                var totalBoughtCost = 0.0
+                var totalSoldQty = 0
+                for (t in trades) {
+                    if (t.type == "BUY") {
+                        totalBoughtQty += t.quantity
+                        totalBoughtCost += (t.quantity * t.price)
+                    } else if (t.type == "SELL") {
+                        totalSoldQty += t.quantity
+                    }
+                }
+                val availableQty = totalBoughtQty - totalSoldQty
+                if (quantity > availableQty) {
+                    throw IllegalStateException(
+                        "Cannot sell $quantity shares! You only hold $availableQty shares."
+                    )
+                }
+                val avgBuyPrice = if (totalBoughtQty > 0) totalBoughtCost / totalBoughtQty else price
+                val realizedPnl = (price - avgBuyPrice) * quantity
 
-        for (t in trades) {
-            if (t.type == "BUY") {
-                totalBoughtQty += t.quantity
-                totalBoughtCost += (t.quantity * t.price)
-            } else if (t.type == "SELL") {
-                totalSoldQty += t.quantity
+                portfolioDao.updateCashBalance(portfolioId, portfolio.cashBalance + totalRevenue)
+                tradeDao.insertTrade(
+                    TradeEntity(
+                        portfolioId = portfolioId,
+                        yahooSymbol = yahooSymbol,
+                        type = "SELL",
+                        quantity = quantity,
+                        price = price,
+                        timestamp = System.currentTimeMillis(),
+                        realizedPnl = realizedPnl,
+                        notes = notes
+                    )
+                )
             }
+            Result.success(tradeId)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-
-        val availableQty = totalBoughtQty - totalSoldQty
-        if (quantity > availableQty) {
-            return@withContext Result.failure(
-                Exception("Cannot sell $quantity shares! You only hold $availableQty shares.")
-            )
-        }
-
-        val avgBuyPrice = if (totalBoughtQty > 0) totalBoughtCost / totalBoughtQty else price
-        val realizedPnl = (price - avgBuyPrice) * quantity
-
-        val totalRevenue = quantity * price
-        val updatedCash = portfolio.cashBalance + totalRevenue
-        portfolioDao.updateCashBalance(portfolioId, updatedCash)
-
-        val trade = TradeEntity(
-            portfolioId = portfolioId,
-            yahooSymbol = yahooSymbol,
-            type = "SELL",
-            quantity = quantity,
-            price = price,
-            timestamp = System.currentTimeMillis(),
-            realizedPnl = realizedPnl,
-            notes = notes
-        )
-        val tradeId = tradeDao.insertTrade(trade)
-        Result.success(tradeId)
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.paperfolio.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,20 +33,71 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.paperfolio.domain.model.StockHolding
+import com.paperfolio.ui.theme.BorderDark
+import com.paperfolio.ui.theme.BrandPrimary
 import com.paperfolio.ui.theme.BseColor
 import com.paperfolio.ui.theme.EtfColor
 import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.LossRedBg
+import com.paperfolio.ui.theme.LossRedDark
 import com.paperfolio.ui.theme.NseColor
 import com.paperfolio.ui.theme.ProfitGreen
 import com.paperfolio.ui.theme.ProfitGreenBg
-import com.paperfolio.ui.theme.SurfaceCard
 import com.paperfolio.ui.theme.SurfaceElevatedDark
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
 import com.paperfolio.ui.theme.TextTertiary
 import com.paperfolio.ui.utils.FormatUtils
 
+// ---------------------------------------------------------------------------
+// Dhan-style shared components. Dhan's language, applied everywhere:
+// white surfaces, 1dp hairline borders instead of shadows, flat list rows
+// separated by dividers, text tabs with a green underline, small grey
+// labels, Semibold symbols, ExtraBold money figures.
+// ---------------------------------------------------------------------------
+
+/** White card with a hairline border — Dhan's card. No shadow. */
+@Composable
+fun DhanCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(12.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, BorderDark),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        content()
+    }
+}
+
+/** Hairline divider between flat list rows. */
+@Composable
+fun DhanDivider(modifier: Modifier = Modifier) {
+    Divider(color = BorderDark, thickness = 1.dp, modifier = modifier)
+}
+
+/** Small grey section header, e.g. "MY PORTFOLIOS", "HOLDINGS". */
+@Composable
+fun DhanSectionHeader(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = text,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = TextSecondary,
+        modifier = modifier
+    )
+}
+
+/** Dhan period tabs: plain text, green underline under the selected one. */
 @Composable
 fun TimePeriodSelector(
     periods: List<String>,
@@ -57,31 +110,42 @@ fun TimePeriodSelector(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .horizontalScroll(scrollState)
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .horizontalScroll(scrollState),
+        horizontalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         periods.forEach { period ->
             val isSelected = period == selectedPeriod
-            Box(
+            Column(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (isSelected) SurfaceElevatedDark else Color.Transparent)
                     .clickable { onPeriodSelected(period) }
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
-                contentAlignment = Alignment.Center
+                    .padding(vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = period,
-                    fontSize = 12.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                     color = if (isSelected) TextPrimary else TextSecondary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Box(
+                    modifier = Modifier
+                        .width(20.dp)
+                        .height(2.dp)
+                        .background(
+                            if (isSelected) BrandPrimary else Color.Transparent,
+                            RoundedCornerShape(1.dp)
+                        )
                 )
             }
         }
     }
 }
 
+/**
+ * Dhan P&L: plain coloured text with an arrow — no pill background.
+ * e.g. ↑ +₹1,234.56 (+2.34%)
+ */
 @Composable
 fun MetricBadge(
     value: Double,
@@ -90,31 +154,28 @@ fun MetricBadge(
 ) {
     val isProfit = value >= 0
     val color = if (isProfit) ProfitGreen else LossRed
-    val bgColor = if (isProfit) ProfitGreenBg else LossRedBg
 
     Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(bgColor)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = if (isProfit) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
             contentDescription = null,
             tint = color,
-            modifier = Modifier.size(12.dp)
+            modifier = Modifier.size(14.dp)
         )
-        Spacer(modifier = Modifier.width(4.dp))
+        Spacer(modifier = Modifier.width(2.dp))
         Text(
             text = "${FormatUtils.formatInr(value, showSign = true)} (${FormatUtils.formatPercent(percent, showSign = true)})",
             color = color,
-            fontSize = 12.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold
         )
     }
 }
 
+/** Dhan exchange tag: tiny grey uppercase text, not a coloured pill. */
 @Composable
 fun ExchangeBadge(
     exchange: String,
@@ -126,39 +187,31 @@ fun ExchangeBadge(
         upper.contains("BSE") -> BseColor
         else -> NseColor
     }
-
-    Box(
+    Text(
+        text = upper,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold,
+        color = badgeColor,
         modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(badgeColor.copy(alpha = 0.15f))
-            .padding(horizontal = 6.dp, vertical = 2.dp)
-    ) {
-        Text(
-            text = exchange,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = badgeColor
-        )
-    }
+    )
 }
 
+/** Dhan watchlist row: flat, symbol + company on the left, LTP + P&L on
+ *  the right, separated from the next row by a hairline divider. */
 @Composable
 fun StockHoldingCard(
     holding: StockHolding,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        shape = RoundedCornerShape(12.dp)
+            .clickable { onClick() }
+            .padding(vertical = 12.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -167,7 +220,7 @@ fun StockHoldingCard(
                     Text(
                         text = holding.tradingSymbol,
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -192,7 +245,7 @@ fun StockHoldingCard(
                 Text(
                     text = FormatUtils.formatInr(holding.currentPrice),
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -207,4 +260,55 @@ fun StockHoldingCard(
             }
         }
     }
+}
+
+/** Filter chip: selected = green tint + green text + green border. */
+@Composable
+fun DhanFilterChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) ProfitGreenBg else SurfaceElevatedDark)
+            .border(
+                width = 1.dp,
+                color = if (selected) BrandPrimary else Color.Transparent,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 14.dp, vertical = 7.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            color = if (selected) BrandPrimary else TextSecondary
+        )
+    }
+}
+
+/** Small tinted P&L text used inside tinted backgrounds (AA on tint). */
+@Composable
+fun PnlText(
+    value: Double,
+    percent: Double? = null,
+    fontSize: Int = 12,
+    fontWeight: FontWeight = FontWeight.SemiBold
+) {
+    val isProfit = value >= 0
+    Text(
+        text = if (percent != null) {
+            "${FormatUtils.formatInr(value, showSign = true)} (${FormatUtils.formatPercent(percent, showSign = true)})"
+        } else {
+            FormatUtils.formatInr(value, showSign = true)
+        },
+        fontSize = fontSize.sp,
+        fontWeight = fontWeight,
+        color = if (isProfit) ProfitGreen else LossRedDark
+    )
 }

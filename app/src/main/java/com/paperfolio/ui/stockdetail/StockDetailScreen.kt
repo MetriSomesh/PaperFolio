@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,10 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,8 +25,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -42,20 +43,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paperfolio.domain.model.ChartPoint
 import com.paperfolio.ui.components.BuyStockBottomSheet
+import com.paperfolio.ui.components.DhanCard
+import com.paperfolio.ui.components.DhanDivider
+import com.paperfolio.ui.components.DhanSectionHeader
 import com.paperfolio.ui.components.ExchangeBadge
 import com.paperfolio.ui.components.StockLineChart
 import com.paperfolio.ui.components.TimePeriodSelector
 import com.paperfolio.ui.theme.BackgroundDark
 import com.paperfolio.ui.theme.BrandPrimary
+import com.paperfolio.ui.theme.BuyGreen
 import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.ProfitGreen
-import com.paperfolio.ui.theme.SurfaceCard
 import com.paperfolio.ui.theme.SurfaceElevatedDark
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
@@ -93,8 +98,8 @@ fun StockDetailScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = uiState.stockDetail?.tradingSymbol ?: "Stock Details",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.SemiBold,
                                 color = TextPrimary
                             )
                             uiState.stockDetail?.let {
@@ -134,7 +139,7 @@ fun StockDetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = ProfitGreen, contentColor = BackgroundDark),
+                        colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("BUY DELIVERY", fontSize = 15.sp, fontWeight = FontWeight.Bold)
@@ -161,14 +166,14 @@ fun StockDetailScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
-                    Text(uiState.errorMessage ?: "Error loading stock", color = LossRed, fontSize = 14.sp)
+                    Text(uiState.errorMessage ?: "Error loading stock", color = TextSecondary, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(14.dp))
                     Button(
                         onClick = { viewModel.loadStockData(uiState.selectedRange) },
-                        colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = BackgroundDark),
-                        shape = RoundedCornerShape(8.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
+                        shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Retry", fontWeight = FontWeight.Bold)
+                        Text("Retry", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -193,8 +198,8 @@ fun StockDetailScreen(
                     Column {
                         Text(
                             text = FormatUtils.formatInr(displayPrice),
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.ExtraBold,
                             color = TextPrimary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -217,7 +222,7 @@ fun StockDetailScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Time Period Tabs (Scrollable & Responsive)
+                // Time Period Tabs
                 TimePeriodSelector(
                     periods = periodMap.map { it.first },
                     selectedPeriod = periodMap.find { it.second == uiState.selectedRange }?.first ?: "1D",
@@ -230,19 +235,14 @@ fun StockDetailScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Interactive Chart
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(240.dp),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
+                DhanCard {
                     StockLineChart(
                         points = stock.chartPoints,
                         isPositive = isPositive,
                         previousClose = stock.prevClose,
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
+                            .height(240.dp)
                             .padding(12.dp),
                         onPointSelected = { point ->
                             highlightedPoint = point
@@ -250,22 +250,13 @@ fun StockDetailScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                // Dhan-style Performance Range Bars (Day Range & 52-Week Range)
-                Text(
-                    text = "Performance",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
+                // Dhan-style Performance Range Bars
+                DhanSectionHeader(text = "PERFORMANCE")
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
+                DhanCard {
                     Column(modifier = Modifier.padding(16.dp)) {
                         RangeSliderView(
                             title = "Today's Low / High",
@@ -273,7 +264,7 @@ fun StockDetailScreen(
                             high = stock.dayHigh,
                             current = stock.currentPrice
                         )
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                         RangeSliderView(
                             title = "52-Week Low / High",
                             low = stock.fiftyTwoWeekLow,
@@ -283,38 +274,25 @@ fun StockDetailScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                // Key Statistics Header
-                Text(
-                    text = "Key Statistics",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
+                // Key Statistics as Dhan rows with dividers
+                DhanSectionHeader(text = "KEY STATISTICS")
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Statistics Grid Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            StatItem(label = "Day High", value = FormatUtils.formatInr(stock.dayHigh))
-                            StatItem(label = "Day Low", value = FormatUtils.formatInr(stock.dayLow))
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            StatItem(label = "52W High", value = FormatUtils.formatInr(stock.fiftyTwoWeekHigh))
-                            StatItem(label = "52W Low", value = FormatUtils.formatInr(stock.fiftyTwoWeekLow))
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            StatItem(label = "Prev. Close", value = FormatUtils.formatInr(stock.prevClose))
-                            StatItem(label = "Volume", value = FormatUtils.formatVolume(stock.volume))
-                        }
+                DhanCard {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                        StatRow(label = "Day High", value = FormatUtils.formatInr(stock.dayHigh))
+                        DhanDivider()
+                        StatRow(label = "Day Low", value = FormatUtils.formatInr(stock.dayLow))
+                        DhanDivider()
+                        StatRow(label = "52W High", value = FormatUtils.formatInr(stock.fiftyTwoWeekHigh))
+                        DhanDivider()
+                        StatRow(label = "52W Low", value = FormatUtils.formatInr(stock.fiftyTwoWeekLow))
+                        DhanDivider()
+                        StatRow(label = "Prev. Close", value = FormatUtils.formatInr(stock.prevClose))
+                        DhanDivider()
+                        StatRow(label = "Volume", value = FormatUtils.formatVolume(stock.volume))
                     }
                 }
 
@@ -363,25 +341,51 @@ fun RangeSliderView(
 
     Column {
         Text(title, fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Progress bar with pointer
-        Box(
+        // Dhan-style range track: thin grey track, green fill to the
+        // marker, dot at the current price.
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(SurfaceElevatedDark)
+                .height(14.dp),
+            contentAlignment = Alignment.CenterStart
         ) {
             Box(
                 modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(SurfaceElevatedDark)
+            )
+            Box(
+                modifier = Modifier
                     .fillMaxWidth(fraction)
-                    .height(6.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
                     .background(BrandPrimary)
             )
+            val dotOffset = with(LocalDensity.current) {
+                (maxWidth * fraction).toPx()
+            }
+            Box(
+                modifier = Modifier
+                    .offset(x = with(LocalDensity.current) { (dotOffset - 7.dp.toPx()).toDp() })
+                    .size(14.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .padding(2.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(BrandPrimary)
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -394,10 +398,15 @@ fun RangeSliderView(
 }
 
 @Composable
-fun StatItem(label: String, value: String) {
-    Column {
-        Text(text = label, fontSize = 11.sp, color = TextSecondary)
-        Spacer(modifier = Modifier.height(2.dp))
+fun StatRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = label, fontSize = 13.sp, color = TextSecondary)
         Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
     }
 }

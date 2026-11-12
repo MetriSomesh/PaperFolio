@@ -1,8 +1,11 @@
 package com.paperfolio.worker
 
 import android.content.Context
+import android.util.Log
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -29,8 +32,8 @@ class DailySnapshotWorker(
             val database = AppDatabase.getInstance(app)
             val api = YahooFinanceApi.create()
             val stockRepo = StockRepository(database.stockMasterDao(), api)
-            val tradeRepo = TradeRepository(database.tradeDao(), database.portfolioDao(), database.stockMasterDao())
-            val portfolioRepo = PortfolioRepository(database.portfolioDao(), database.portfolioSnapshotDao(), tradeRepo, stockRepo)
+            val tradeRepo = TradeRepository(database)
+            val portfolioRepo = PortfolioRepository(database, tradeRepo, stockRepo)
 
             val portfolios = database.portfolioDao().getAllPortfoliosList()
             val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -54,7 +57,12 @@ class DailySnapshotWorker(
 
             Result.success()
         } catch (e: Exception) {
-            Result.retry()
+            // Was Result.retry(): any failure (including a database
+            // error) retried with backoff forever. A missed daily
+            // snapshot is not worth that — the next periodic run in
+            // 24h tries again anyway.
+            Log.e("DailySnapshotWorker", "Snapshot run failed", e)
+            Result.failure()
         }
     }
 
@@ -64,6 +72,13 @@ class DailySnapshotWorker(
         fun schedule(context: Context) {
             val request = PeriodicWorkRequestBuilder<DailySnapshotWorker>(24, TimeUnit.HOURS)
                 .setInitialDelay(1, TimeUnit.HOURS)
+                // Snapshots need live prices; don't wake up offline
+                // just to fail and (previously) retry forever.
+                .setConstraints(
+                    Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                        .build()
+                )
                 .build()
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(

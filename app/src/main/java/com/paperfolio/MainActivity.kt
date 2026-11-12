@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -21,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -46,11 +48,14 @@ import com.paperfolio.ui.settings.SettingsViewModel
 import com.paperfolio.ui.stockdetail.StockDetailScreen
 import com.paperfolio.ui.stockdetail.StockDetailViewModel
 import com.paperfolio.ui.theme.BackgroundDark
+import com.paperfolio.ui.theme.BorderDark
 import com.paperfolio.ui.theme.BrandPrimary
+import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.PaperFolioTheme
 import com.paperfolio.ui.theme.SurfaceDark
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
+import com.paperfolio.ui.theme.TextTertiary
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector? = null) {
     object Home : Screen("home", "Portfolios", Icons.Default.PieChart)
@@ -96,11 +101,28 @@ class MainActivity : ComponentActivity() {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(e.localizedMessage ?: e.toString(), color = TextSecondary, fontSize = 12.sp)
                         Spacer(modifier = Modifier.height(16.dp))
-                        androidx.compose.material3.Button(onClick = {
-                            applicationContext.deleteDatabase("paperfolio_v2.db")
-                            recreate()
+                        androidx.compose.material3.Button(onClick = { recreate() }) {
+                            Text("Retry")
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        // The old screen's primary action was "Reset & Retry",
+                        // which deleted the whole database (every portfolio
+                        // and trade) on a single tap. Erasing data is now a
+                        // deliberate two-tap confirm, never the default.
+                        var eraseArmed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                        androidx.compose.material3.TextButton(onClick = {
+                            if (eraseArmed) {
+                                applicationContext.deleteDatabase("paperfolio_v2.db")
+                                recreate()
+                            } else {
+                                eraseArmed = true
+                            }
                         }) {
-                            Text("Reset & Retry")
+                            Text(
+                                if (eraseArmed) "Tap again to erase ALL portfolios & trades"
+                                else "Erase all data & retry",
+                                color = LossRed
+                            )
                         }
                     }
                 }
@@ -127,9 +149,15 @@ fun MainAppNavigation(app: PaperFolioApp) {
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
+                // Dhan bottom nav: white bar, hairline top border, no
+                // pill indicator — selected tab is green icon + label.
                 NavigationBar(
                     containerColor = SurfaceDark,
-                    tonalElevation = 8.dp
+                    tonalElevation = 0.dp,
+                    modifier = Modifier.border(
+                        width = 1.dp,
+                        color = BorderDark
+                    )
                 ) {
                     bottomNavItems.forEach { screen ->
                         val selected = currentRoute == screen.route
@@ -152,15 +180,17 @@ fun MainAppNavigation(app: PaperFolioApp) {
                             label = {
                                 Text(
                                     text = screen.title,
-                                    fontSize = 11.sp
+                                    fontSize = 11.sp,
+                                    fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.SemiBold
+                                    else androidx.compose.ui.text.font.FontWeight.Medium
                                 )
                             },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = BrandPrimary,
                                 selectedTextColor = BrandPrimary,
-                                unselectedIconColor = TextSecondary,
-                                unselectedTextColor = TextSecondary,
-                                indicatorColor = SurfaceDark
+                                unselectedIconColor = TextTertiary,
+                                unselectedTextColor = TextTertiary,
+                                indicatorColor = androidx.compose.ui.graphics.Color.Transparent
                             )
                         )
                     }

@@ -5,13 +5,13 @@
 [![Android](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.05.00-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![Material 3](https://img.shields.io/badge/Material%203-Dhan%20Theme-00D09C?style=for-the-badge)](https://m3.material.io/)
-[![Room](https://img.shields.io/badge/Room%20DB-2.6.1%20FTS4-F44336?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.android.com/training/data-storage/room)
+[![Material 3](https://img.shields.io/badge/Material%203-Dhan%20Theme-00916E?style=for-the-badge)](https://m3.material.io/)
+[![Room](https://img.shields.io/badge/Room%20DB-2.6.1-F44336?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.android.com/training/data-storage/room)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 **A modern, self-contained, and completely serverless Android paper trading app for the Indian Stock Market (NSE & BSE Equities + ETFs).**
 
-Inspired by the sleek dark UI of the **Dhan** app. Built for pure delivery/cash investing with **zero real money risk** and **100% free offline-first architecture**.
+Inspired by the clean light UI of the **Dhan** app. Built for pure delivery/cash investing with **zero real money risk** and **100% free offline-first architecture**.
 
 </div>
 
@@ -25,7 +25,7 @@ Most paper trading platforms either require paid subscriptions, mandate broker l
 * 🇮🇳 **Pure Indian Market Focus**: Covers **8,100+ active NSE & BSE equities and 360+ ETFs**.
 * 🛡️ **Pure Delivery / Cash Trading**: No options, no futures, no confusing leverage — practice disciplined long-term investing and swing trading.
 * ⚡ **100% Free & Serverless**: No external server or recurring API costs. The app runs completely on-device using a pre-compiled SQLite database and free, on-demand live quotes.
-* 🎨 **Dhan-Inspired Aesthetics**: Deep dark palette (`#0F1117`), high-contrast profit/loss badges (`#00D09C` / `#EB5B56`), custom cubic Bézier price charts, and performance range sliders.
+* 🎨 **Dhan-Inspired Aesthetics**: Light palette (white background, hairline `#E5E8EB` borders), Inter typography, profit/loss as plain coloured text (`#007A5E` / `#D92D20`), custom cubic Bézier price charts, and performance range sliders.
 
 ---
 
@@ -38,7 +38,7 @@ Most paper trading platforms either require paid subscriptions, mandate broker l
 - Color tags and individual portfolio net worth tracking.
 
 ### 2. ⚡ Offline Stock Search & On-Demand Quotes
-- Instant full-text search across **8,100+ instruments** with `< 1ms` latency powered by SQLite **FTS4**.
+- Instant search across **8,100+ instruments** with `< 1ms` latency, using `LIKE` prefix matching on the local catalog. (An FTS4 table is seeded alongside the catalog for future use, but search currently runs on `LIKE`, not FTS.)
 - Dedicated filter chips: **ALL**, **NSE**, **BSE**, and **ETF** with custom exchange badges.
 - **On-Demand Live Pricing**: The app does **not** fetch bulk quotes on startup. Live market prices and interactive charts are only fetched when you inspect a specific stock or view an active portfolio.
 
@@ -87,7 +87,7 @@ PaperFolio follows Google's recommended **Clean Architecture** and **MVVM** patt
                            │
 ┌──────────────────────────▼─────────────────────────────┐
 │                     Data Layer                         │
-│  Room DB (SQLite + FTS4)  ·  Retrofit  ·  WorkManager  │
+│  Room DB (SQLite)  ·  Retrofit  ·  WorkManager  │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -96,7 +96,7 @@ PaperFolio follows Google's recommended **Clean Architecture** and **MVVM** patt
 | **Language** | Kotlin 1.9.24 |
 | **UI Framework** | Jetpack Compose (BOM 2024.05.00) + Material 3 |
 | **Navigation** | AndroidX Navigation Compose 2.7.7 |
-| **Database** | Room 2.6.1 with SQLite FTS4 virtual search table |
+| **Database** | Room 2.6.1 (SQLite; stock catalog seeded from the bundled asset — see [Data safety](#-data-safety-v102)) |
 | **Networking** | Retrofit 2.11.0 + OkHttp 4.12.0 (Yahoo Finance v8 engine) |
 | **Serialization** | Kotlinx Serialization JSON 1.6.3 |
 | **Background Tasks** | AndroidX WorkManager 2.9.0 |
@@ -232,16 +232,36 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 
 ## 🎨 Color Palette (Dhan Inspiration)
 
-| Color Name | Hex Code | Preview | Purpose |
+Dhan's app is light: white background, hairline borders, and colour used sparingly — green/red as plain text for P&L, a solid green fill only for the primary BUY action. Text contrasts were computed against their backgrounds (WCAG AA: 4.5:1 for body text).
+
+| Color Name | Hex Code | Contrast | Purpose |
 |---|---|---|---|
-| **Background Dark** | `#0F1117` | <img src="https://via.placeholder.com/15/0F1117/000000?text=+" width="15" height="15" /> | App background |
-| **Surface Dark** | `#181B24` | <img src="https://via.placeholder.com/15/181B24/000000?text=+" width="15" height="15" /> | Navigation bar & dialogs |
-| **Surface Card** | `#1E222D` | <img src="https://via.placeholder.com/15/1E222D/000000?text=+" width="15" height="15" /> | Stock cards & portfolio cards |
-| **Surface Elevated** | `#222634` | <img src="https://via.placeholder.com/15/222634/000000?text=+" width="15" height="15" /> | Search bars & stepper buttons |
-| **Profit Green** | `#00D09C` | <img src="https://via.placeholder.com/15/00D09C/000000?text=+" width="15" height="15" /> | Gains, buy buttons, NSE badge |
-| **Loss Red** | `#EB5B56` | <img src="https://via.placeholder.com/15/EB5B56/000000?text=+" width="15" height="15" /> | Losses & sell buttons |
-| **Gold Accent** | `#FFB800` | <img src="https://via.placeholder.com/15/FFB800/000000?text=+" width="15" height="15" /> | ETF badge & highlights |
-| **Electric Violet** | `#9B51E0` | <img src="https://via.placeholder.com/15/9B51E0/000000?text=+" width="15" height="15" /> | BSE badge |
+| **Background** | `#FFFFFF` | — | App background |
+| **Surface Card** | `#FFFFFF` | — | Cards (1dp `#E5E8EB` border, no shadow) |
+| **Surface Elevated** | `#F4F6F8` | — | Search bars, stepper buttons, chips |
+| **Text Primary** | `#12151A` | 18.5:1 | Headings, values |
+| **Text Secondary** | `#5B6675` | 5.8:1 | Labels, subtext |
+| **Text Tertiary** | `#6B7686` | 4.6:1 | Captions, timestamps |
+| **Brand Green** | `#00916E` | — | BUY fill, links, selected tabs |
+| **Profit Green (text)** | `#007A5E` | 5.3:1 | Gains, P&L text |
+| **Loss Red (text)** | `#D92D20` | 4.8:1 | Losses, SELL, errors |
+| **Chart Green** | `#00B386` | — | Chart line / gradient |
+| **BSE Violet** | `#7C3AED` | — | BSE badge |
+| **ETF Amber** | `#B45309` | — | ETF badge |
+
+## 🛡️ Data safety (v1.0.2)
+
+**The bug (v1.0.1):** creating portfolios and adding stocks, then closing the app from Recents and reopening it, wiped every portfolio and trade.
+
+**Root cause:** the database was built with `.createFromAsset("stock_master.db")` + `.fallbackToDestructiveMigration()`. The bundled asset shipped with `PRAGMA user_version = 0` while Room expected version 1, so on every cold (re)open Room's copy-helper saw a version mismatch with no migration path and **deleted the live database file and re-copied the asset** — user tables included. Two more wipe paths existed: the app-level catch that deleted the database on any open error, and the recovery screen's one-tap "Reset & Retry".
+
+**The fix:**
+- No `createFromAsset`, no destructive fallback. The stock catalog is now seeded from the asset with `ATTACH` + `INSERT OR IGNORE` into an ordinary Room database (`CatalogSeedCallback`), which only ever INSERTs into `stock_master` / `stock_master_fts` and can never touch user tables.
+- If the catalog is ever found empty on open, it re-seeds itself (self-heal) — again without touching user data.
+- Buy/sell and portfolio creation now run inside single Room transactions, so a crash mid-order can't leave a half-written state.
+- The recovery screen's erase is now a deliberate two-tap action ("Tap again to erase ALL portfolios & trades").
+
+**Regression test:** `app/src/test/java/com/paperfolio/PersistenceTest.kt` (Robolectric, runs on the JVM) simulates the exact user flow — create, insert, close, reopen, twice — and asserts portfolios, trades, and the 8,100-stock catalog all survive, plus that an emptied catalog self-heals without touching user data. Run it with `./gradlew testDebugUnitTest`.
 
 ---
 

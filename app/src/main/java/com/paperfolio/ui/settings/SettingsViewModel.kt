@@ -31,8 +31,13 @@ class SettingsViewModel(
 
     private fun loadStockCount() {
         viewModelScope.launch {
-            val count = stockMasterDao.getStockCount()
-            _uiState.value = _uiState.value.copy(totalStockCount = count)
+            // Was an uncaught launch: a database error here crashed the
+            // Settings screen. A failed count now just leaves 0 shown.
+            try {
+                val count = stockMasterDao.getStockCount()
+                _uiState.value = _uiState.value.copy(totalStockCount = count)
+            } catch (_: Exception) {
+            }
         }
     }
 

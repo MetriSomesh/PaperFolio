@@ -63,9 +63,12 @@ cur.execute('CREATE INDEX IF NOT EXISTS index_portfolio_snapshot_portfolioId ON 
 cur.execute('CREATE INDEX IF NOT EXISTS index_portfolio_snapshot_date ON portfolio_snapshot (date);')
 cur.execute('CREATE UNIQUE INDEX IF NOT EXISTS index_portfolio_snapshot_portfolioId_date ON portfolio_snapshot (portfolioId, date);')
 
-# 6. Create and populate room_master_table with Room's identity hash
-cur.execute('CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY, identity_hash TEXT);')
-cur.execute("INSERT OR REPLACE INTO room_master_table (id, identity_hash) VALUES (42, '7ad03fac311821d000e28a8342e3b062');")
+# 6. The asset is now only a SEED source (see AppDatabase.kt) — it must
+# NOT carry a room_master_table with a hand-copied identity hash. Room
+# manages that table in the live database; a stale hash could make Room
+# reject the database. Drop any leftover row and stamp the version.
+cur.execute('DROP TABLE IF EXISTS room_master_table;')
+cur.execute('PRAGMA user_version = 1;')
 
 conn.commit()
 

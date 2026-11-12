@@ -11,14 +11,13 @@ import com.paperfolio.worker.DailySnapshotWorker
 
 class PaperFolioApp : Application() {
 
+    // NOTE: this used to catch ANY database error and call
+    // deleteDatabase("paperfolio_v2.db") — i.e. silently erase every
+    // portfolio and trade the moment opening the DB hiccuped once.
+    // That catch-all is gone. A database failure must now surface as an
+    // error, never as silent data loss.
     val database: AppDatabase by lazy {
-        try {
-            AppDatabase.getInstance(this)
-        } catch (e: Throwable) {
-            Log.e("PaperFolioApp", "Error getting database, recreating...", e)
-            deleteDatabase("paperfolio_v2.db")
-            AppDatabase.getInstance(this)
-        }
+        AppDatabase.getInstance(this)
     }
 
     val yahooApi: YahooFinanceApi by lazy {
@@ -30,13 +29,12 @@ class PaperFolioApp : Application() {
     }
 
     val tradeRepository: TradeRepository by lazy {
-        TradeRepository(database.tradeDao(), database.portfolioDao(), database.stockMasterDao())
+        TradeRepository(database)
     }
 
     val portfolioRepository: PortfolioRepository by lazy {
         PortfolioRepository(
-            database.portfolioDao(),
-            database.portfolioSnapshotDao(),
+            database,
             tradeRepository,
             stockRepository
         )

@@ -10,7 +10,7 @@ data class PortfolioEntity(
     val name: String,
     val createdAt: Long = System.currentTimeMillis(),
     val description: String = "",
-    val colorTag: String = "#00D09C",
+    val colorTag: String = "#00916E",
     val initialBalance: Double = 100000.0,
     val cashBalance: Double = 100000.0
 )

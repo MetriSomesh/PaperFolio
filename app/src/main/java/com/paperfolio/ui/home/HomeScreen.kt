@@ -1,5 +1,6 @@
 package com.paperfolio.ui.home
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -30,10 +31,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -44,6 +42,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -61,11 +61,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paperfolio.domain.model.Portfolio
+import com.paperfolio.ui.components.DhanCard
+import com.paperfolio.ui.components.DhanFilterChip
+import com.paperfolio.ui.components.DhanSectionHeader
 import com.paperfolio.ui.theme.BackgroundDark
 import com.paperfolio.ui.theme.BorderDark
 import com.paperfolio.ui.theme.BrandPrimary
+import com.paperfolio.ui.theme.BuyGreen
 import com.paperfolio.ui.theme.LossRed
-import com.paperfolio.ui.theme.SurfaceCard
+import com.paperfolio.ui.theme.ProfitGreenBg
 import com.paperfolio.ui.theme.SurfaceDark
 import com.paperfolio.ui.theme.SurfaceElevatedDark
 import com.paperfolio.ui.theme.TextPrimary
@@ -81,36 +85,33 @@ fun HomeScreen(
     onNavigateToPortfolio: (Long) -> Unit
 ) {
     val portfolios by viewModel.portfolios.collectAsStateWithLifecycle()
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var showCreateDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(BrandPrimary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("PF", color = BackgroundDark, fontWeight = FontWeight.Black, fontSize = 16.sp)
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = "PaperFolio",
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
-                            )
-                            Text(
-                                text = "Indian Equity Paper Trading",
-                                fontSize = 11.sp,
-                                color = TextTertiary
-                            )
-                        }
+                    Column {
+                        Text(
+                            text = "PaperFolio",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Indian Equity Paper Trading",
+                            fontSize = 11.sp,
+                            color = TextTertiary
+                        )
                     }
                 },
                 actions = {
@@ -121,16 +122,6 @@ fun HomeScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showCreateDialog = true },
-                containerColor = BrandPrimary,
-                contentColor = BackgroundDark,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "New Portfolio", modifier = Modifier.size(26.dp))
-            }
-        },
         containerColor = BackgroundDark
     ) { paddingValues ->
         LazyColumn(
@@ -140,25 +131,36 @@ fun HomeScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Search Bar Header Button
+            // Dhan-style search bar: grey pill, magnifier, placeholder.
             item {
-                Card(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onNavigateToSearch() },
-                    colors = CardDefaults.cardColors(containerColor = SurfaceElevatedDark),
-                    shape = RoundedCornerShape(14.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SurfaceElevatedDark)
+                        .clickable { onNavigateToSearch() }
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 13.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Search, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text("Search NSE / BSE stocks & ETFs...", color = TextSecondary, fontSize = 14.sp)
-                    }
+                    Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text("Search NSE / BSE stocks & ETFs...", color = TextSecondary, fontSize = 14.sp)
+                }
+            }
+
+            // Primary action: full-width green button (Dhan's CTA style).
+            item {
+                Button(
+                    onClick = { showCreateDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Create Portfolio", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
             }
 
@@ -169,25 +171,16 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "My Portfolios (${portfolios.size})",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
+                    DhanSectionHeader(text = "MY PORTFOLIOS (${portfolios.size})")
                     TextButton(onClick = { showCreateDialog = true }) {
-                        Text("+ Create New", color = BrandPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("+ Create New", color = BrandPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
 
             if (portfolios.isEmpty()) {
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
+                    DhanCard {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -198,7 +191,7 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .size(54.dp)
                                     .clip(CircleShape)
-                                    .background(BrandPrimary.copy(alpha = 0.15f)),
+                                    .background(ProfitGreenBg),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(28.dp))
@@ -207,7 +200,7 @@ fun HomeScreen(
                             Text(
                                 text = "No Portfolios Yet",
                                 fontSize = 17.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = TextPrimary
                             )
                             Spacer(modifier = Modifier.height(6.dp))
@@ -220,10 +213,10 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.height(18.dp))
                             Button(
                                 onClick = { showCreateDialog = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = BackgroundDark),
+                                colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
-                                Text("Create First Portfolio", fontWeight = FontWeight.Bold)
+                                Text("Create First Portfolio", fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -260,13 +253,7 @@ fun PortfolioItemCard(
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        shape = RoundedCornerShape(14.dp)
-    ) {
+    DhanCard(onClick = onClick) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -285,7 +272,7 @@ fun PortfolioItemCard(
                     }
                     Box(
                         modifier = Modifier
-                            .size(12.dp)
+                            .size(10.dp)
                             .clip(CircleShape)
                             .background(dotColor)
                     )
@@ -293,7 +280,7 @@ fun PortfolioItemCard(
                     Text(
                         text = portfolio.name,
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
                 }
@@ -358,7 +345,7 @@ fun PortfolioItemCard(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete Portfolio?", color = TextPrimary, fontWeight = FontWeight.Bold) },
+            title = { Text("Delete Portfolio?", color = TextPrimary, fontWeight = FontWeight.SemiBold) },
             text = { Text("Are you sure you want to delete '${portfolio.name}' and all its trade history? This action cannot be undone.", color = TextSecondary) },
             confirmButton = {
                 TextButton(
@@ -367,7 +354,7 @@ fun PortfolioItemCard(
                         onDelete()
                     }
                 ) {
-                    Text("Delete", color = LossRed, fontWeight = FontWeight.Bold)
+                    Text("Delete", color = LossRed, fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
@@ -387,7 +374,8 @@ fun CreatePortfolioDialog(
 ) {
     var name by remember { mutableStateOf("") }
     var budgetText by remember { mutableStateOf("100000") }
-    var selectedColor by remember { mutableStateOf("#00D09C") }
+    var selectedColor by remember { mutableStateOf("#00916E") }
+    var budgetError by remember { mutableStateOf<String?>(null) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val presetBudgets = listOf(
@@ -400,12 +388,12 @@ fun CreatePortfolioDialog(
     )
 
     val colorOptions = listOf(
-        "#00D09C", "#5B7FFF", "#FFB800", "#9B51E0", "#FF6B6B"
+        "#00916E", "#2563EB", "#B45309", "#7C3AED", "#D92D20"
     )
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create New Portfolio", fontWeight = FontWeight.Bold, color = TextPrimary) },
+        title = { Text("Create New Portfolio", fontWeight = FontWeight.SemiBold, color = TextPrimary) },
         text = {
             Column {
                 Text("Portfolio Name", fontSize = 12.sp, color = TextSecondary)
@@ -431,7 +419,10 @@ fun CreatePortfolioDialog(
                 Spacer(modifier = Modifier.height(6.dp))
                 OutlinedTextField(
                     value = budgetText,
-                    onValueChange = { budgetText = it.filter { ch -> ch.isDigit() } },
+                    onValueChange = {
+                        budgetText = it.filter { ch -> ch.isDigit() }
+                        budgetError = null
+                    },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
@@ -440,18 +431,23 @@ fun CreatePortfolioDialog(
                     keyboardActions = KeyboardActions(
                         onDone = { keyboardController?.hide() }
                     ),
+                    isError = budgetError != null,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = BrandPrimary,
                         unfocusedBorderColor = BorderDark,
                         focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
+                        unfocusedTextColor = TextPrimary,
+                        errorBorderColor = LossRed
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
+                budgetError?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(it, fontSize = 12.sp, color = LossRed)
+                }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Scrollable Budget Presets for complete responsiveness
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -460,20 +456,14 @@ fun CreatePortfolioDialog(
                 ) {
                     presetBudgets.forEach { (label, amt) ->
                         val isSelected = budgetText == amt.toLong().toString()
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) BrandPrimary.copy(alpha = 0.2f) else SurfaceElevatedDark)
-                                .clickable { budgetText = amt.toLong().toString() }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = label,
-                                fontSize = 12.sp,
-                                color = if (isSelected) BrandPrimary else TextSecondary,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
+                        DhanFilterChip(
+                            text = label,
+                            selected = isSelected,
+                            onClick = {
+                                budgetText = amt.toLong().toString()
+                                budgetError = null
+                            }
+                        )
                     }
                 }
 
@@ -510,14 +500,22 @@ fun CreatePortfolioDialog(
                 onClick = {
                     keyboardController?.hide()
                     val budget = budgetText.toDoubleOrNull() ?: 100000.0
+                    // Minimum capital is ₹1,000 (README promise). Zero or
+                    // tiny budgets used to create portfolios where every
+                    // buy failed with "insufficient funds".
+                    if (budget < 1000.0) {
+                        budgetError = "Minimum capital is ₹1,000"
+                        return@Button
+                    }
                     if (name.isNotBlank()) {
                         onConfirm(name, budget, selectedColor)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = BackgroundDark),
-                enabled = name.isNotBlank()
+                colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
+                enabled = name.isNotBlank(),
+                shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Create Portfolio", fontWeight = FontWeight.Bold)
+                Text("Create Portfolio", fontWeight = FontWeight.SemiBold)
             }
         },
         dismissButton = {

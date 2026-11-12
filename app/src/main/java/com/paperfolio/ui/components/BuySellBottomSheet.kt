@@ -26,8 +26,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -52,10 +51,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.paperfolio.domain.model.Portfolio
 import com.paperfolio.ui.theme.BorderDark
+import com.paperfolio.ui.theme.BuyGreen
 import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.ProfitGreen
+import com.paperfolio.ui.theme.ProfitGreenBg
 import com.paperfolio.ui.theme.SurfaceCard
-import com.paperfolio.ui.theme.SurfaceDark
 import com.paperfolio.ui.theme.SurfaceElevatedDark
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
@@ -80,9 +80,14 @@ fun BuyStockBottomSheet(
     var priceText by remember { mutableStateOf(String.format(java.util.Locale.US, "%.2f", currentPrice)) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    val qty = quantityText.toIntOrNull() ?: 1
-    val customPrice = priceText.toDoubleOrNull() ?: currentPrice
-    val totalCost = qty * customPrice
+    // Invalid input is now an error state, not a silent fallback:
+    // an empty/garbled quantity used to mean "1" and a bad price
+    // silently became the LTP — either could buy the wrong amount.
+    val qty = quantityText.toIntOrNull()
+    val qtyValid = qty != null && qty > 0
+    val customPrice = priceText.toDoubleOrNull()
+    val priceValid = customPrice != null && customPrice > 0.0
+    val totalCost = (qty ?: 0) * (customPrice ?: 0.0)
 
     val selectedPortfolio = portfolios.find { it.id == selectedPortfolioId }
     val availableCash = selectedPortfolio?.cashBalance ?: 0.0
@@ -91,7 +96,7 @@ fun BuyStockBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = SurfaceDark
+        containerColor = SurfaceCard
     ) {
         Column(
             modifier = Modifier
@@ -130,7 +135,7 @@ fun BuyStockBottomSheet(
                     Text(
                         text = FormatUtils.formatInr(currentPrice),
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
                 }
@@ -138,7 +143,7 @@ fun BuyStockBottomSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Select Target Portfolio (Scrollable Row for responsiveness!)
+            // Select Target Portfolio
             Text(
                 text = "Park in Portfolio",
                 fontSize = 12.sp,
@@ -165,7 +170,7 @@ fun BuyStockBottomSheet(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) ProfitGreen.copy(alpha = 0.2f) else SurfaceCard)
+                                .background(if (isSelected) ProfitGreenBg else SurfaceElevatedDark)
                                 .border(
                                     width = 1.dp,
                                     color = if (isSelected) ProfitGreen else BorderDark,
@@ -177,7 +182,7 @@ fun BuyStockBottomSheet(
                             Text(
                                 text = portfolio.name,
                                 fontSize = 13.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                 color = if (isSelected) ProfitGreen else TextPrimary
                             )
                         }
@@ -201,7 +206,6 @@ fun BuyStockBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "Quantity", fontSize = 12.sp, color = TextSecondary)
-                // Quick add chips
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf(5, 10, 25, 50).forEach { addQty ->
                         Box(
@@ -244,6 +248,7 @@ fun BuyStockBottomSheet(
                     onValueChange = { quantityText = it.filter { ch -> ch.isDigit() } },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
+                    isError = !qtyValid,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Next
@@ -252,7 +257,8 @@ fun BuyStockBottomSheet(
                         focusedBorderColor = ProfitGreen,
                         unfocusedBorderColor = BorderDark,
                         focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
+                        unfocusedTextColor = TextPrimary,
+                        errorBorderColor = LossRed
                     )
                 )
 
@@ -270,6 +276,10 @@ fun BuyStockBottomSheet(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Increase", tint = TextPrimary)
                 }
+            }
+            if (!qtyValid) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Enter a valid quantity", fontSize = 11.sp, color = LossRed)
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -297,6 +307,7 @@ fun BuyStockBottomSheet(
                 onValueChange = { priceText = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                isError = !priceValid,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
                     imeAction = ImeAction.Done
@@ -308,18 +319,19 @@ fun BuyStockBottomSheet(
                     focusedBorderColor = ProfitGreen,
                     unfocusedBorderColor = BorderDark,
                     focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary
+                    unfocusedTextColor = TextPrimary,
+                    errorBorderColor = LossRed
                 )
             )
+            if (!priceValid) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Enter a valid price", fontSize = 11.sp, color = LossRed)
+            }
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Order Summary Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                shape = RoundedCornerShape(12.dp)
-            ) {
+            // Order Summary
+            DhanCard {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -329,12 +341,12 @@ fun BuyStockBottomSheet(
                 ) {
                     Column {
                         Text("Total Order Amount", fontSize = 12.sp, color = TextSecondary)
-                        Text("$qty shares × ₹$priceText", fontSize = 11.sp, color = TextTertiary)
+                        Text("${qty ?: 0} shares × ₹$priceText", fontSize = 11.sp, color = TextTertiary)
                     }
                     Text(
                         FormatUtils.formatInr(totalCost),
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
                 }
@@ -346,17 +358,17 @@ fun BuyStockBottomSheet(
             Button(
                 onClick = {
                     keyboardController?.hide()
-                    if (selectedPortfolioId > 0 && qty > 0 && customPrice > 0.0) {
-                        onConfirmBuy(selectedPortfolioId, qty, customPrice)
+                    if (selectedPortfolioId > 0 && qtyValid && priceValid) {
+                        onConfirmBuy(selectedPortfolioId, qty!!, customPrice!!)
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                enabled = hasEnoughCash && portfolios.isNotEmpty() && qty > 0 && customPrice > 0.0,
+                enabled = hasEnoughCash && portfolios.isNotEmpty() && qtyValid && priceValid,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = ProfitGreen,
-                    contentColor = SurfaceDark
+                    containerColor = BuyGreen,
+                    contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(10.dp)
             ) {
@@ -386,16 +398,18 @@ fun SellStockBottomSheet(
     var priceText by remember { mutableStateOf(String.format(java.util.Locale.US, "%.2f", currentPrice)) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    val qty = quantityText.toIntOrNull() ?: availableQuantity
-    val customPrice = priceText.toDoubleOrNull() ?: currentPrice
-    val totalRevenue = qty * customPrice
-    val estimatedPnl = (customPrice - averageBuyPrice) * qty
+    val qty = quantityText.toIntOrNull()
+    val qtyValid = qty != null && qty in 1..availableQuantity
+    val customPrice = priceText.toDoubleOrNull()
+    val priceValid = customPrice != null && customPrice > 0.0
+    val totalRevenue = (qty ?: 0) * (customPrice ?: 0.0)
+    val estimatedPnl = ((customPrice ?: 0.0) - averageBuyPrice) * (qty ?: 0)
     val isProfit = estimatedPnl >= 0
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = SurfaceDark
+        containerColor = SurfaceCard
     ) {
         Column(
             modifier = Modifier
@@ -429,7 +443,7 @@ fun SellStockBottomSheet(
                     Text(
                         text = FormatUtils.formatInr(currentPrice),
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
                 }
@@ -459,7 +473,7 @@ fun SellStockBottomSheet(
                         .clickable { quantityText = availableQuantity.toString() }
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
-                    Text("Sell All ($availableQuantity)", fontSize = 11.sp, color = LossRed, fontWeight = FontWeight.Bold)
+                    Text("Sell All ($availableQuantity)", fontSize = 11.sp, color = LossRed, fontWeight = FontWeight.SemiBold)
                 }
             }
             Spacer(modifier = Modifier.height(6.dp))
@@ -487,6 +501,7 @@ fun SellStockBottomSheet(
                     onValueChange = { quantityText = it.filter { ch -> ch.isDigit() } },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
+                    isError = !qtyValid,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Next
@@ -495,7 +510,8 @@ fun SellStockBottomSheet(
                         focusedBorderColor = LossRed,
                         unfocusedBorderColor = BorderDark,
                         focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
+                        unfocusedTextColor = TextPrimary,
+                        errorBorderColor = LossRed
                     )
                 )
 
@@ -513,6 +529,10 @@ fun SellStockBottomSheet(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Increase", tint = TextPrimary)
                 }
+            }
+            if (!qtyValid) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Enter 1 to $availableQuantity shares", fontSize = 11.sp, color = LossRed)
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -540,6 +560,7 @@ fun SellStockBottomSheet(
                 onValueChange = { priceText = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                isError = !priceValid,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
                     imeAction = ImeAction.Done
@@ -551,17 +572,18 @@ fun SellStockBottomSheet(
                     focusedBorderColor = LossRed,
                     unfocusedBorderColor = BorderDark,
                     focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary
+                    unfocusedTextColor = TextPrimary,
+                    errorBorderColor = LossRed
                 )
             )
+            if (!priceValid) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Enter a valid price", fontSize = 11.sp, color = LossRed)
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                shape = RoundedCornerShape(12.dp)
-            ) {
+            DhanCard {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -571,7 +593,7 @@ fun SellStockBottomSheet(
                         Text(
                             FormatUtils.formatInr(totalRevenue),
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = TextPrimary
                         )
                     }
@@ -584,7 +606,7 @@ fun SellStockBottomSheet(
                         Text(
                             FormatUtils.formatInr(estimatedPnl, showSign = true),
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = if (isProfit) ProfitGreen else LossRed
                         )
                     }
@@ -596,17 +618,17 @@ fun SellStockBottomSheet(
             Button(
                 onClick = {
                     keyboardController?.hide()
-                    if (qty in 1..availableQuantity && customPrice > 0.0) {
-                        onConfirmSell(qty, customPrice)
+                    if (qtyValid && priceValid) {
+                        onConfirmSell(qty!!, customPrice!!)
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                enabled = qty in 1..availableQuantity && customPrice > 0.0,
+                enabled = qtyValid && priceValid,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = LossRed,
-                    contentColor = TextPrimary
+                    contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(10.dp)
             ) {

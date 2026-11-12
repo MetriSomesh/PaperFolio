@@ -24,8 +24,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -43,21 +41,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.paperfolio.BuildConfig
+import com.paperfolio.ui.components.DhanCard
+import com.paperfolio.ui.components.DhanFilterChip
 import com.paperfolio.ui.theme.BackgroundDark
 import com.paperfolio.ui.theme.BorderDark
 import com.paperfolio.ui.theme.BrandPrimary
+import com.paperfolio.ui.theme.BuyGreen
 import com.paperfolio.ui.theme.LossRed
 import com.paperfolio.ui.theme.LossRedBg
 import com.paperfolio.ui.theme.ProfitGreen
 import com.paperfolio.ui.theme.ProfitGreenBg
-import com.paperfolio.ui.theme.SurfaceCard
-import com.paperfolio.ui.theme.SurfaceElevatedDark
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
 import com.paperfolio.ui.theme.TextTertiary
@@ -79,8 +80,8 @@ fun SettingsScreen(
                 title = {
                     Text(
                         text = "Settings & Tools",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
                     )
                 },
@@ -98,16 +99,12 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Add Newly Listed Stock Section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            DhanCard {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.AddBusiness, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add Newly Listed Stock", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Text("Add Newly Listed Stock", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
@@ -145,21 +142,11 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         listOf("NSE", "BSE").forEach { exch ->
-                            val isSelected = exch == selectedExchange
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) BrandPrimary.copy(alpha = 0.2f) else SurfaceElevatedDark)
-                                    .clickable { selectedExchange = exch }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Text(
-                                    text = exch,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) BrandPrimary else TextSecondary
-                                )
-                            }
+                            DhanFilterChip(
+                                text = exch,
+                                selected = exch == selectedExchange,
+                                onClick = { selectedExchange = exch }
+                            )
                         }
                     }
 
@@ -174,13 +161,13 @@ fun SettingsScreen(
                             .fillMaxWidth()
                             .height(46.dp),
                         enabled = newStockSymbol.isNotBlank() && !uiState.isAddingStock,
-                        colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary, contentColor = BackgroundDark),
+                        colors = ButtonDefaults.buttonColors(containerColor = BuyGreen, contentColor = Color.White),
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         if (uiState.isAddingStock) {
-                            CircularProgressIndicator(color = BackgroundDark, modifier = Modifier.size(20.dp))
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
                         } else {
-                            Text("Validate & Add to App", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Validate & Add to App", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                         }
                     }
 
@@ -221,20 +208,16 @@ fun SettingsScreen(
             }
 
             // Database Info Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            DhanCard {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Stock Master Database", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text("Stock Master Database", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Active Stocks in App", fontSize = 13.sp, color = TextSecondary)
-                        Text("${uiState.totalStockCount} instruments", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = BrandPrimary)
+                        Text("${uiState.totalStockCount} instruments", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = BrandPrimary)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(
@@ -248,13 +231,9 @@ fun SettingsScreen(
             }
 
             // About App Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            DhanCard {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("About PaperFolio", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text("About PaperFolio", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = "100% Free Indian Stock Market Paper Trading App. Self-contained on your device with no external server or login required.",
@@ -262,7 +241,13 @@ fun SettingsScreen(
                         color = TextSecondary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Version 1.0.1 (Pure Delivery & Cash)", fontSize = 11.sp, color = TextTertiary)
+                    // Was hardcoded "Version 1.0.1" — now reads the real
+                    // build version so it can never go stale again.
+                    Text(
+                        "Version ${BuildConfig.VERSION_NAME} (Pure Delivery & Cash)",
+                        fontSize = 11.sp,
+                        color = TextTertiary
+                    )
                 }
             }
         }

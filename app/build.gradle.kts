@@ -13,8 +13,8 @@ android {
         applicationId = "com.paperfolio"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -53,6 +53,9 @@ android {
 
     buildFeatures {
         compose = true
+        // AGP 8+ does not generate BuildConfig by default; SettingsScreen
+        // reads BuildConfig.VERSION_NAME for the About row.
+        buildConfig = true
     }
 
     androidResources {
@@ -68,6 +71,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -75,6 +84,9 @@ dependencies {
     implementation(composeBom)
     androidTestImplementation(composeBom)
     testImplementation("junit:junit:4.13.2")
+    // Robolectric runs the Room persistence test on the JVM (no device needed).
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("androidx.test:core:1.5.0")
 
     // NOTE: lifecycle must stay on 2.7.x while Compose is 1.6.x (BOM 2024.05.00).
     // lifecycle-runtime-compose 2.8.0 moved LocalLifecycleOwner to
@@ -118,4 +130,10 @@ dependencies {
 
     // WorkManager (for daily snapshot task)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+}
+
+ksp {
+    // Room exports its schema JSON here (AppDatabase exportSchema = true).
+    // The schema files are committed so migrations can be verified in review.
+    arg("room.schemaLocation", "$projectDir/schemas")
 }

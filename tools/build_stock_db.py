@@ -198,11 +198,14 @@ def build_database():
     cursor.execute("CREATE INDEX IF NOT EXISTS index_portfolio_snapshot_date ON portfolio_snapshot (date);")
     cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS index_portfolio_snapshot_portfolioId_date ON portfolio_snapshot (portfolioId, date);")
     
-    # 5. room_master_table
-    cursor.execute("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY, identity_hash TEXT);")
-    cursor.execute("INSERT OR REPLACE INTO room_master_table (id, identity_hash) VALUES (42, '7ad03fac311821d000e28a8342e3b062');")
-    
-    # 6. Full Text Search virtual table for lightning search
+    # 5. Full Text Search virtual table for lightning search
+    # NOTE: this asset is now only a SEED source. The app no longer opens
+    # it with Room's createFromAsset(), so it must NOT contain a
+    # room_master_table with a hand-copied identity hash — Room manages
+    # that table itself in the live database, and a stale hardcoded hash
+    # was one of the things that could make Room reject the database.
+    # The asset's user_version is set to the Room version (1) for hygiene.
+    cursor.execute("PRAGMA user_version = 1;")
     cursor.execute("""
     CREATE VIRTUAL TABLE IF NOT EXISTS stock_master_fts USING fts4(
         yahooSymbol,

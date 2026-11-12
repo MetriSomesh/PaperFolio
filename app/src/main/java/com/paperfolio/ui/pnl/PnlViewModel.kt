@@ -57,6 +57,23 @@ class PnlViewModel(
         customEnd: Long? = null
     ) {
         viewModelScope.launch {
+            // Was: any database/network failure inside this launch left
+            // the screen stuck on the spinner forever (isLoading never
+            // reset) or crashed the coroutine. Failures now end loading
+            // and keep the last good data on screen.
+            try {
+                loadPnlDataUnsafe(period, customStart, customEnd)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
+    }
+
+    private suspend fun loadPnlDataUnsafe(
+        period: String,
+        customStart: Long? = null,
+        customEnd: Long? = null
+    ) {
             _uiState.value = _uiState.value.copy(isLoading = true, selectedPeriod = period)
 
             val cal = Calendar.getInstance()
@@ -70,7 +87,13 @@ class PnlViewModel(
                 "1Y" -> Pair(cal.apply { add(Calendar.YEAR, -1) }.timeInMillis, now)
                 "3Y" -> Pair(cal.apply { add(Calendar.YEAR, -3) }.timeInMillis, now)
                 "5Y" -> Pair(cal.apply { add(Calendar.YEAR, -5) }.timeInMillis, now)
-                "CUSTOM" -> Pair(customStart ?: 0L, customEnd ?: now)
+                // The date picker returns the START of the picked days
+                // (00:00). Without this, every trade on the end day
+                // itself was silently excluded from the range.
+                "CUSTOM" -> Pair(
+                    customStart ?: 0L,
+                    (customEnd ?: now) + 86_399_999L // end of the picked day
+                )
                 else -> Pair(0L, now) // ALL
             }
 
@@ -128,6 +151,5 @@ class PnlViewModel(
                 closedTrades = sellTrades,
                 portfolioBreakdown = breakdown
             )
-        }
     }
 }

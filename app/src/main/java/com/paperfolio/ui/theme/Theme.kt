@@ -4,27 +4,32 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
+// Dhan-style LIGHT color scheme: white background, hairline borders,
+// green primary, red for losses. There is no dark scheme — Dhan's app
+// is light, and the old dark theme is what the user asked to replace.
+private val LightColorScheme = lightColorScheme(
     primary = BrandPrimary,
     onPrimary = BackgroundDark,
-    primaryContainer = SurfaceElevatedDark,
-    onPrimaryContainer = TextPrimary,
+    primaryContainer = ProfitGreenBg,
+    onPrimaryContainer = BrandPrimary,
     secondary = BrandAccent,
-    onSecondary = TextPrimary,
+    onSecondary = BackgroundDark,
     background = BackgroundDark,
     onBackground = TextPrimary,
     surface = SurfaceDark,
     onSurface = TextPrimary,
     surfaceVariant = SurfaceElevatedDark,
     onSurfaceVariant = TextSecondary,
-    outline = BorderDark
+    outline = BorderDark,
+    error = LossRed,
+    onError = BackgroundDark
 )
 
 private fun Context.findActivity(): Activity? {
@@ -40,7 +45,7 @@ private fun Context.findActivity(): Activity? {
 fun PaperFolioTheme(
     content: @Composable () -> Unit
 ) {
-    val colorScheme = DarkColorScheme
+    val colorScheme = LightColorScheme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -49,8 +54,9 @@ fun PaperFolioTheme(
                 val window = activity.window
                 window.statusBarColor = BackgroundDark.toArgb()
                 window.navigationBarColor = BackgroundDark.toArgb()
-                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
-                WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
+                // Light bars: dark icons on white.
+                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+                WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = true
             }
         }
     }

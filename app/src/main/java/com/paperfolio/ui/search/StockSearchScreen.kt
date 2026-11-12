@@ -1,6 +1,5 @@
 package com.paperfolio.ui.search
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,8 +22,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,17 +36,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.paperfolio.data.local.entity.StockMasterEntity
+import com.paperfolio.ui.components.DhanCard
+import com.paperfolio.ui.components.DhanDivider
+import com.paperfolio.ui.components.DhanFilterChip
+import com.paperfolio.ui.components.DhanSectionHeader
 import com.paperfolio.ui.components.ExchangeBadge
 import com.paperfolio.ui.theme.BackgroundDark
 import com.paperfolio.ui.theme.BorderDark
 import com.paperfolio.ui.theme.BrandPrimary
-import com.paperfolio.ui.theme.SurfaceCard
 import com.paperfolio.ui.theme.SurfaceElevatedDark
 import com.paperfolio.ui.theme.TextPrimary
 import com.paperfolio.ui.theme.TextSecondary
@@ -113,30 +111,20 @@ fun StockSearchScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Exchange Filters (Horizontal Scrollable for clean responsiveness)
+            // Exchange Filters
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf("ALL", "NSE", "BSE", "ETF").forEach { exch ->
-                    val isSelected = exch == uiState.selectedExchange
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) BrandPrimary.copy(alpha = 0.2f) else SurfaceElevatedDark)
-                            .clickable { viewModel.onExchangeFilterSelected(exch) }
-                            .padding(horizontal = 16.dp, vertical = 7.dp)
-                    ) {
-                        Text(
-                            text = exch,
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) BrandPrimary else TextSecondary
-                        )
-                    }
+                    DhanFilterChip(
+                        text = exch,
+                        selected = exch == uiState.selectedExchange,
+                        onClick = { viewModel.onExchangeFilterSelected(exch) }
+                    )
                 }
             }
 
@@ -156,33 +144,37 @@ fun StockSearchScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     if (uiState.isShowingPopular) {
                         item {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
+                                    .padding(vertical = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Popular & Trending",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextSecondary
-                                )
+                                DhanSectionHeader(text = "POPULAR & TRENDING")
                             }
                         }
                     }
 
-                    items(uiState.results, key = { it.yahooSymbol }) { stock ->
-                        StockSearchResultItem(
-                            stock = stock,
-                            onClick = { onStockSelected(stock.yahooSymbol) }
-                        )
+                    item {
+                        DhanCard {
+                            Column(modifier = Modifier.padding(horizontal = 14.dp)) {
+                                uiState.results.forEachIndexed { index, stock ->
+                                    StockSearchResultRow(
+                                        stock = stock,
+                                        onClick = { onStockSelected(stock.yahooSymbol) }
+                                    )
+                                    if (index < uiState.results.size - 1) {
+                                        DhanDivider()
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -191,57 +183,43 @@ fun StockSearchScreen(
 }
 
 @Composable
-fun StockSearchResultItem(
+fun StockSearchResultRow(
     stock: StockMasterEntity,
     onClick: () -> Unit
 ) {
-    Card(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-        shape = RoundedCornerShape(12.dp)
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stock.tradingSymbol,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    ExchangeBadge(exchange = stock.exchange)
-                }
-                Spacer(modifier = Modifier.height(2.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = stock.companyName,
-                    fontSize = 12.sp,
-                    color = TextTertiary,
-                    maxLines = 1
+                    text = stock.tradingSymbol,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
                 )
+                Spacer(modifier = Modifier.width(8.dp))
+                ExchangeBadge(exchange = stock.exchange)
             }
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(SurfaceElevatedDark)
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = "Trade >",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = BrandPrimary
-                )
-            }
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = stock.companyName,
+                fontSize = 12.sp,
+                color = TextTertiary,
+                maxLines = 1
+            )
         }
+
+        Text(
+            text = "Trade >",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = BrandPrimary
+        )
     }
 }

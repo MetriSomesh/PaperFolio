@@ -1,7 +1,7 @@
 package com.paperfolio.data.repository
 
-import com.paperfolio.data.local.dao.PortfolioDao
-import com.paperfolio.data.local.dao.PortfolioSnapshotDao
+import androidx.room.withTransaction
+import com.paperfolio.data.local.AppDatabase
 import com.paperfolio.data.local.entity.PortfolioEntity
 import com.paperfolio.data.local.entity.PortfolioSnapshotEntity
 import com.paperfolio.domain.model.Portfolio
@@ -15,11 +15,12 @@ import java.util.Date
 import java.util.Locale
 
 class PortfolioRepository(
-    private val portfolioDao: PortfolioDao,
-    private val snapshotDao: PortfolioSnapshotDao,
+    private val database: AppDatabase,
     private val tradeRepository: TradeRepository,
     private val stockRepository: StockRepository
 ) {
+    private val portfolioDao get() = database.portfolioDao()
+    private val snapshotDao get() = database.portfolioSnapshotDao()
 
     val portfoliosFlow: Flow<List<Portfolio>> = portfolioDao.getAllPortfolios().map { list ->
         list.map { it.toDomain() }
@@ -37,29 +38,35 @@ class PortfolioRepository(
         name: String,
         initialBalance: Double,
         description: String = "",
-        colorTag: String = "#00D09C"
+        colorTag: String = "#00916E"
     ): Long = withContext(Dispatchers.IO) {
-        val entity = PortfolioEntity(
-            name = name.trim(),
-            initialBalance = initialBalance,
-            cashBalance = initialBalance,
-            description = description.trim(),
-            colorTag = colorTag
-        )
-        val id = portfolioDao.insertPortfolio(entity)
-
-        // Record initial snapshot
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        snapshotDao.insertSnapshot(
-            PortfolioSnapshotEntity(
-                portfolioId = id,
-                date = today,
-                totalValue = initialBalance,
-                investedAmount = 0.0,
-                cashBalance = initialBalance
+        // Portfolio row + initial snapshot in ONE transaction: a kill
+        // between the two used to leave a portfolio with no snapshot
+        // (and a snapshot insert failure used to surface as a crash
+        // after the portfolio was already visible).
+        database.withTransaction {
+            val entity = PortfolioEntity(
+                name = name.trim(),
+                initialBalance = initialBalance,
+                cashBalance = initialBalance,
+                description = description.trim(),
+                colorTag = colorTag
             )
-        )
-        id
+            val id = portfolioDao.insertPortfolio(entity)
+
+            // Record initial snapshot
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            snapshotDao.insertSnapshot(
+                PortfolioSnapshotEntity(
+                    portfolioId = id,
+                    date = today,
+                    totalValue = initialBalance,
+                    investedAmount = 0.0,
+                    cashBalance = initialBalance
+                )
+            )
+            id
+        }
     }
 
     suspend fun updatePortfolio(portfolio: Portfolio) = withContext(Dispatchers.IO) {
