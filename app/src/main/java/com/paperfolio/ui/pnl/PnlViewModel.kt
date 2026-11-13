@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.paperfolio.data.local.dao.TradeDao
 import com.paperfolio.data.local.entity.TradeEntity
+import com.paperfolio.data.repository.FifoPnl
 import com.paperfolio.data.repository.PortfolioRepository
 import com.paperfolio.data.repository.TradeRepository
 import com.paperfolio.domain.model.Portfolio
@@ -97,14 +98,25 @@ class PnlViewModel(
                 else -> Pair(0L, now) // ALL
             }
 
+            // Realized P&L, recomputed FIFO from the FULL history.
+            // The `realizedPnl` stored on old SELL rows was computed with
+            // the broken all-buys average (buy 10@100, sell 10@120, buy
+            // 10@200, sell 10@210 stored +600 instead of +100), so the
+            // screen cannot trust it. FIFO needs the lots open before
+            // each sell, so the replay always starts from the full
+            // history — even for a filtered period — and the period
+            // filter is applied to the sells afterwards.
+            val allTrades = tradeDao.getAllTradesList()
+            val correctedRealized = FifoPnl.realizedPnlByTradeId(allTrades)
             val trades = if (period == "ALL") {
-                tradeDao.getAllTradesList()
+                allTrades
             } else {
-                tradeDao.getTradesBetweenDates(startMs, endMs)
+                allTrades.filter { it.timestamp in startMs..endMs }
             }
 
-            // Realized PnL from SELL trades
+            // Realized PnL from SELL trades (FIFO-corrected values)
             val sellTrades = trades.filter { it.type == "SELL" }
+                .map { it.copy(realizedPnl = correctedRealized[it.id] ?: it.realizedPnl) }
             val realizedPnl = sellTrades.sumOf { it.realizedPnl ?: 0.0 }
 
             // Unrealized PnL across active portfolios

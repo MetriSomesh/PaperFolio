@@ -4,7 +4,7 @@ Paper trading for Indian stocks. Android, Kotlin, Jetpack Compose. No account, n
 
 The catalog is bundled: 8,100 NSE/BSE listings (7,740 equities, 359 ETFs). Live prices and charts come from Yahoo Finance, fetched only when you open a stock or a portfolio — nothing is fetched in bulk at startup.
 
-Current version: **1.0.3**.
+Current version: **1.0.4**.
 
 ## Install
 
@@ -15,7 +15,7 @@ Build the release APK and install it with adb:
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-Installing 1.0.3 over 1.0.2 keeps your portfolios. (Portfolios wiped by the 1.0.1 bug can't be recovered — they have to be re-created; see [Data safety](#data-safety).)
+Installing 1.0.4 over 1.0.3 keeps your portfolios. (Portfolios wiped by the 1.0.1 bug can't be recovered — they have to be re-created; see [Data safety](#data-safety).)
 
 ## What it does
 
@@ -23,7 +23,7 @@ Installing 1.0.3 over 1.0.2 keeps your portfolios. (Portfolios wiped by the 1.0.
 - **Buy and sell, delivery only.** No F&O, no leverage. Average buy price is tracked per holding; selling shows estimated realized P&L before you confirm.
 - **Search.** The whole catalog is on-device, so search is instant. Filter by NSE / BSE / ETF.
 - **Charts.** Interactive price chart with previous-close reference and touch crosshair, plus day and 52-week low/high range bars.
-- **P&L statement.** Total net P&L split into realized (sold trades, for the selected period) and unrealized (open holdings, right now), with a breakdown per portfolio and a realized-trades history. Custom date ranges supported.
+- **P&L statement.** Total net P&L split into realized (sold trades, for the selected period) and unrealized (open holdings, right now), with a breakdown per portfolio and a realized-trades history. Custom date ranges supported. Realized P&L and holding averages use FIFO cost basis — a sell matches the oldest still-open buy lots (fixed in 1.0.4; earlier versions averaged all buys ever, which overstated P&L after a sell-and-rebuy).
 - **Daily snapshots.** A background worker records one portfolio snapshot a day so the portfolio chart has history.
 - **New listings.** An IPO or stock that isn't in the bundled catalog can be added from Settings — it's validated against Yahoo Finance first, then stored locally.
 
@@ -69,7 +69,6 @@ Every text colour was checked against its background (WCAG AA, 4.5:1 for body te
 
 Stated plainly, because they're real:
 
-- **Average price ignores sells.** The holding average is computed over all buys, so after a sell-and-rebuy the average and P&L are wrong. (Example: buy 10 @ ₹100, sell 10 @ ₹120, buy 10 @ ₹200, sell 10 @ ₹210 shows +₹600; the true figure is +₹100.) A FIFO fix is next.
 - **Yahoo Finance is the only price source.** If a quote fetch fails, the app silently falls back to the average buy price as "current", which flattens P&L instead of showing an error.
 - **No backup or export.** Portfolios live only in the on-device database.
 - **The release keystore is tracked in git** (`app/release-key.jks`, passwords in `app/build.gradle.kts`). Anyone with the repo can sign updates as the app. Key rotation is needed.

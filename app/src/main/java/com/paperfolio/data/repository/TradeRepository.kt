@@ -86,25 +86,19 @@ class TradeRepository(
                     ?: throw IllegalStateException("Portfolio not found")
 
                 val trades = tradeDao.getTradesForStock(portfolioId, yahooSymbol)
-                var totalBoughtQty = 0
-                var totalBoughtCost = 0.0
-                var totalSoldQty = 0
-                for (t in trades) {
-                    if (t.type == "BUY") {
-                        totalBoughtQty += t.quantity
-                        totalBoughtCost += (t.quantity * t.price)
-                    } else if (t.type == "SELL") {
-                        totalSoldQty += t.quantity
-                    }
-                }
-                val availableQty = totalBoughtQty - totalSoldQty
+                // FIFO cost basis: a sell matches the oldest still-open
+                // buy lots. Averaging ALL buys ever (the old code) kept
+                // already-sold lots in the average, so a re-buy after a
+                // full exit showed a wrong realized P&L (e.g. buy 10@100,
+                // sell 10@120, buy 10@200, sell 10@210 showed +600
+                // instead of the true +100).
+                val availableQty = FifoPnl.availableQuantity(trades)
                 if (quantity > availableQty) {
                     throw IllegalStateException(
                         "Cannot sell $quantity shares! You only hold $availableQty shares."
                     )
                 }
-                val avgBuyPrice = if (totalBoughtQty > 0) totalBoughtCost / totalBoughtQty else price
-                val realizedPnl = (price - avgBuyPrice) * quantity
+                val realizedPnl = FifoPnl.realizedForSell(trades, quantity, price)
 
                 portfolioDao.updateCashBalance(portfolioId, portfolio.cashBalance + totalRevenue)
                 tradeDao.insertTrade(
@@ -131,49 +125,35 @@ class TradeRepository(
      */
     suspend fun getHoldings(portfolioId: Long): List<StockHolding> = withContext(Dispatchers.IO) {
         val trades = tradeDao.getTradesForPortfolioList(portfolioId)
-        val grouped = trades.groupBy { it.yahooSymbol }
+        // FIFO open positions: average price and invested cost come from
+        // the lots still open, not from all buys ever (the old code kept
+        // already-sold lots in the average, so a re-bought stock showed
+        // e.g. avg ₹150 / invested ₹1,500 instead of ₹200 / ₹2,000).
+        val holdingsBySymbol = FifoPnl.holdings(trades)
         val holdings = mutableListOf<StockHolding>()
 
-        for ((symbol, tradeList) in grouped) {
-            var buyQty = 0
-            var buyCost = 0.0
-            var sellQty = 0
+        for ((symbol, holding) in holdingsBySymbol) {
+            val info = stockMasterDao.getStockByYahooSymbol(symbol)
 
-            for (t in tradeList) {
-                if (t.type == "BUY") {
-                    buyQty += t.quantity
-                    buyCost += (t.quantity * t.price)
-                } else if (t.type == "SELL") {
-                    sellQty += t.quantity
-                }
-            }
+            val tradingSym = info?.tradingSymbol ?: symbol.substringBefore(".")
+            val compName = info?.companyName ?: tradingSym
+            val exch = info?.exchange ?: if (symbol.endsWith(".NS")) "NSE" else "BSE"
 
-            val currentQty = buyQty - sellQty
-            if (currentQty > 0) {
-                val avgPrice = if (buyQty > 0) buyCost / buyQty else 0.0
-                val invested = currentQty * avgPrice
-                val info = stockMasterDao.getStockByYahooSymbol(symbol)
-
-                val tradingSym = info?.tradingSymbol ?: symbol.substringBefore(".")
-                val compName = info?.companyName ?: tradingSym
-                val exch = info?.exchange ?: if (symbol.endsWith(".NS")) "NSE" else "BSE"
-
-                holdings.add(
-                    StockHolding(
-                        yahooSymbol = symbol,
-                        tradingSymbol = tradingSym,
-                        companyName = compName,
-                        exchange = exch,
-                        quantity = currentQty,
-                        averagePrice = avgPrice,
-                        investedAmount = invested,
-                        currentPrice = avgPrice, // Default until live price is fetched
-                        currentValue = invested,
-                        pnl = 0.0,
-                        pnlPercent = 0.0
-                    )
+            holdings.add(
+                StockHolding(
+                    yahooSymbol = symbol,
+                    tradingSymbol = tradingSym,
+                    companyName = compName,
+                    exchange = exch,
+                    quantity = holding.quantity,
+                    averagePrice = holding.averagePrice,
+                    investedAmount = holding.investedAmount,
+                    currentPrice = holding.averagePrice, // Default until live price is fetched
+                    currentValue = holding.investedAmount,
+                    pnl = 0.0,
+                    pnlPercent = 0.0
                 )
-            }
+            )
         }
         holdings
     }
