@@ -20,7 +20,7 @@ Installing 1.0.4 over 1.0.3 keeps your portfolios. (Portfolios wiped by the 1.0.
 ## What it does
 
 - **Portfolios.** Create as many as you want, each with its own starting capital (₹1,000 minimum, no upper limit). Cash goes down on a buy, back up on a sell.
-- **Buy and sell, delivery only.** No F&O, no leverage. Average buy price is tracked per holding; selling shows estimated realized P&L before you confirm.
+- **Buy and sell, delivery only.** No F&O, no leverage. Average buy price is tracked per holding; selling shows estimated realized P&L before you confirm. A buy started from a portfolio's page buys into that portfolio (fixed in 1.0.5 — it used to default to the newest portfolio).
 - **Search.** The whole catalog is on-device, so search is instant. Filter by NSE / BSE / ETF.
 - **Charts.** Interactive price chart with previous-close reference and touch crosshair, plus day and 52-week low/high range bars.
 - **P&L statement.** Total net P&L split into realized (sold trades, for the selected period) and unrealized (open holdings, right now), with a breakdown per portfolio and a realized-trades history. Custom date ranges supported. Realized P&L and holding averages use FIFO cost basis — a sell matches the oldest still-open buy lots (fixed in 1.0.4; earlier versions averaged all buys ever, which overstated P&L after a sell-and-rebuy).

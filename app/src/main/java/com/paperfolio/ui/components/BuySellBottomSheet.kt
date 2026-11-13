@@ -63,6 +63,24 @@ import com.paperfolio.ui.theme.TextTertiary
 import com.paperfolio.ui.theme.VeltoGreen
 import com.paperfolio.ui.utils.FormatUtils
 
+/**
+ * Which portfolio a buy sheet opens with.
+ *
+ * The bug this guards (reported Nov 2026): the sheet used to take the
+ * first portfolio in the list, and the list is newest-first, so a buy
+ * started from portfolio A's page opened with B pre-selected and the
+ * stock landed in B. Now the caller passes the portfolio the buy
+ * started from ([requestedId]); it wins when it is actually in the
+ * list, and a stale id (portfolio deleted since) falls back to the
+ * first portfolio instead of buying into nothing.
+ */
+fun resolveInitialPortfolioId(
+    portfolios: List<Portfolio>,
+    requestedId: Long?
+): Long =
+    requestedId?.takeIf { id -> portfolios.any { it.id == id } }
+        ?: portfolios.firstOrNull()?.id ?: 0L
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BuyStockBottomSheet(
@@ -75,7 +93,7 @@ fun BuyStockBottomSheet(
     onConfirmBuy: (portfolioId: Long, quantity: Int, price: Double) -> Unit
 ) {
     var selectedPortfolioId by remember {
-        mutableStateOf(initialSelectedPortfolioId ?: portfolios.firstOrNull()?.id ?: 0L)
+        mutableStateOf(resolveInitialPortfolioId(portfolios, initialSelectedPortfolioId))
     }
     var quantityText by remember { mutableStateOf("1") }
     var priceText by remember { mutableStateOf(String.format(java.util.Locale.US, "%.2f", currentPrice)) }

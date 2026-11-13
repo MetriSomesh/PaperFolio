@@ -51,7 +51,14 @@ import com.paperfolio.ui.theme.TextSecondary
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector? = null) {
     object Home : Screen("home", "Portfolios", Icons.Default.PieChart)
-    object Search : Screen("search", "Search", Icons.Default.Search)
+    // portfolioId is optional (-1 = none): when a buy starts from a
+    // portfolio's page, the id rides along so the buy sheet opens with
+    // THAT portfolio pre-selected (see the bug fixed in 1.0.5 — without
+    // it, the sheet defaulted to the newest portfolio and buys landed
+    // in the wrong one).
+    object Search : Screen("search?portfolioId={portfolioId}", "Search", Icons.Default.Search) {
+        fun createRoute(portfolioId: Long = -1L) = "search?portfolioId=$portfolioId"
+    }
     object Pnl : Screen("pnl", "P&L", Icons.AutoMirrored.Filled.TrendingUp)
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
 
@@ -59,8 +66,8 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector?
         fun createRoute(id: Long) = "portfolio/$id"
     }
 
-    object StockDetail : Screen("stock/{yahooSymbol}", "Stock") {
-        fun createRoute(symbol: String) = "stock/$symbol"
+    object StockDetail : Screen("stock/{yahooSymbol}?portfolioId={portfolioId}", "Stock") {
+        fun createRoute(symbol: String, portfolioId: Long = -1L) = "stock/$symbol?portfolioId=$portfolioId"
     }
 }
 
@@ -180,14 +187,21 @@ fun MainAppNavigation(app: PaperFolioApp) {
                 )
                 HomeScreen(
                     viewModel = homeViewModel,
-                    onNavigateToSearch = { navController.navigate(Screen.Search.route) },
+                    onNavigateToSearch = { navController.navigate(Screen.Search.createRoute()) },
                     onNavigateToPortfolio = { portfolioId ->
                         navController.navigate(Screen.PortfolioDetail.createRoute(portfolioId))
                     }
                 )
             }
 
-            composable(Screen.Search.route) {
+            composable(
+                route = Screen.Search.route,
+                arguments = listOf(navArgument("portfolioId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                })
+            ) { backStackEntry ->
+                val sourcePortfolioId = backStackEntry.arguments?.getLong("portfolioId") ?: -1L
                 val searchViewModel = viewModel<StockSearchViewModel>(
                     factory = object : androidx.lifecycle.ViewModelProvider.Factory {
                         @Suppress("UNCHECKED_CAST")
@@ -200,7 +214,7 @@ fun MainAppNavigation(app: PaperFolioApp) {
                     viewModel = searchViewModel,
                     onNavigateBack = { navController.popBackStack() },
                     onStockSelected = { symbol ->
-                        navController.navigate(Screen.StockDetail.createRoute(symbol))
+                        navController.navigate(Screen.StockDetail.createRoute(symbol, sourcePortfolioId))
                     }
                 )
             }
@@ -227,18 +241,25 @@ fun MainAppNavigation(app: PaperFolioApp) {
                 PortfolioDetailScreen(
                     viewModel = detailViewModel,
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateToSearch = { navController.navigate(Screen.Search.route) },
+                    onNavigateToSearch = { navController.navigate(Screen.Search.createRoute(portfolioId)) },
                     onNavigateToStockDetail = { symbol ->
-                        navController.navigate(Screen.StockDetail.createRoute(symbol))
+                        navController.navigate(Screen.StockDetail.createRoute(symbol, portfolioId))
                     }
                 )
             }
 
             composable(
                 route = Screen.StockDetail.route,
-                arguments = listOf(navArgument("yahooSymbol") { type = NavType.StringType })
+                arguments = listOf(
+                    navArgument("yahooSymbol") { type = NavType.StringType },
+                    navArgument("portfolioId") {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    }
+                )
             ) { backStackEntry ->
                 val symbol = backStackEntry.arguments?.getString("yahooSymbol") ?: ""
+                val sourcePortfolioId = backStackEntry.arguments?.getLong("portfolioId") ?: -1L
                 val stockDetailViewModel = viewModel<StockDetailViewModel>(
                     key = "stock_$symbol",
                     factory = object : androidx.lifecycle.ViewModelProvider.Factory {
@@ -255,7 +276,8 @@ fun MainAppNavigation(app: PaperFolioApp) {
                 )
                 StockDetailScreen(
                     viewModel = stockDetailViewModel,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    sourcePortfolioId = sourcePortfolioId
                 )
             }
 

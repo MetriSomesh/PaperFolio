@@ -72,7 +72,13 @@ import com.paperfolio.ui.utils.FormatUtils
 @Composable
 fun StockDetailScreen(
     viewModel: StockDetailViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    // Portfolio the buy started from (-1 = none, e.g. opened from the
+    // Home search tab). The buy sheet pre-selects this portfolio; see
+    // resolveInitialPortfolioId. Without it, buys from portfolio A's
+    // page landed in B, because the sheet defaulted to the newest
+    // portfolio (the list is newest-first) and nothing said "from A".
+    sourcePortfolioId: Long = -1L
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val portfolios by viewModel.portfolios.collectAsStateWithLifecycle()
@@ -301,7 +307,8 @@ fun StockDetailScreen(
             companyName = stock.companyName,
             currentPrice = stock.currentPrice,
             portfolios = portfolios,
-            initialSelectedPortfolioId = portfolios.firstOrNull()?.id,
+            initialSelectedPortfolioId = if (sourcePortfolioId > 0) sourcePortfolioId
+            else portfolios.firstOrNull()?.id,
             onDismiss = { showBuySheet = false },
             onConfirmBuy = { portfolioId, qty, price ->
                 viewModel.executeBuy(
